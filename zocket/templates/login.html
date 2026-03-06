@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>zocket login</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 0 0, #e2e8f0 0, #f8fafc 45%);
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      }
+      .card {
+        width: min(520px, 94vw);
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        background: white;
+        padding: 16px;
+      }
+      h1 { margin: 0 0 8px; }
+      h2 { margin: 14px 0 8px; font-size: 17px; }
+      p { margin: 0 0 12px; color: #475569; }
+      input, button {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        font: inherit;
+      }
+      button {
+        border: none;
+        background: #0f766e;
+        color: white;
+        cursor: pointer;
+      }
+      .danger { background: #be123c; }
+      .error {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #fecdd3;
+        background: #fff1f2;
+        color: #9f1239;
+        border-radius: 8px;
+      }
+      .section {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .warning {
+        border-color: #fdba74;
+        background: #fff7ed;
+      }
+      .checkline {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 0 0 8px;
+        color: #334155;
+      }
+      .checkline input {
+        width: auto;
+        margin: 3px 0 0;
+        padding: 0;
+      }
+      .lang a { margin-right: 8px; color: #0f766e; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="lang">
+        <a href="/login?lang=en">EN</a>
+        <a href="/login?lang=ru">RU</a>
+      </div>
+      <h1>{{ t("ui.sign_in") }}</h1>
+
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+
+      {% if missing_password %}
+        <h1>{{ t("ui.first_setup_title") }}</h1>
+        <p>{{ t("ui.first_setup_subtitle") }}</p>
+
+        <div class="section">
+          <h2>{{ t("ui.set_password") }}</h2>
+          <form method="post" action="/setup/first-run">
+            <input type="hidden" name="mode" value="set_password" />
+            <input type="password" name="password" placeholder="{{ t('ui.password') }}" required />
+            <input type="password" name="password_repeat" placeholder="{{ t('ui.password_repeat') }}" required />
+            <button type="submit">{{ t("ui.save_and_enter") }}</button>
+          </form>
+        </div>
+
+        <div class="section">
+          <h2>{{ t("ui.generate_password") }}</h2>
+          <p>{{ t("ui.generate_password_hint") }}</p>
+          <form method="post" action="/setup/first-run">
+            <input type="hidden" name="mode" value="generate_password" />
+            <button type="submit">{{ t("ui.generate_and_enter") }}</button>
+          </form>
+        </div>
+
+        <div class="section warning">
+          <h2>{{ t("ui.continue_without_password") }}</h2>
+          <p>{{ t("ui.insecure_warning") }}</p>
+          <form method="post" action="/setup/first-run" onsubmit="return confirm('{{ t('ui.insecure_confirm_dialog') }}')">
+            <input type="hidden" name="mode" value="no_password" />
+            <label class="checkline">
+              <input type="checkbox" name="confirm_no_password" value="1" required />
+              <span>{{ t("ui.i_understand_risk") }}</span>
+            </label>
+            <button class="danger" type="submit">{{ t("ui.continue_anyway") }}</button>
+          </form>
+        </div>
+      {% else %}
+        <form method="post" action="/login">
+          <input type="password" name="password" placeholder="{{ t('ui.password') }}" required />
+          <button type="submit">{{ t("ui.login") }}</button>
+        </form>
+      {% endif %}
+    </div>
+  </body>
+</html>

@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>zocket</title>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: #cbd5e1;
+        --accent: #0f766e;
+        --danger: #be123c;
+        --card: #ffffff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: radial-gradient(circle at 0 0, #e2e8f0 0, var(--bg) 45%);
+        color: var(--text);
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      }
+      h1, h2, h3 { margin: 0 0 10px; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      .layout { display: grid; gap: 16px; grid-template-columns: 320px 1fr; }
+      .card { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 14px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+      input, button, textarea {
+        width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; font: inherit;
+      }
+      button { background: var(--accent); color: white; border: none; cursor: pointer; }
+      .danger { background: var(--danger); }
+      .inline { display: inline-flex; gap: 8px; align-items: center; }
+      .inline form { margin: 0; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .btn-small { width: auto; padding: 8px 12px; }
+      .folder-field { display: flex; gap: 8px; align-items: center; }
+      .folder-field input { margin-bottom: 0; }
+      .folder-list {
+        max-height: 260px;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px;
+      }
+      .folder-list button {
+        width: 100%;
+        text-align: left;
+        margin-bottom: 6px;
+      }
+      .folder-list button:last-child { margin-bottom: 0; }
+      .modal[hidden] { display: none; }
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .modal-card {
+        width: min(760px, 96vw);
+        max-height: 90vh;
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--card);
+        padding: 14px;
+      }
+      .modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .error {
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        border: 1px solid #fecdd3;
+        background: #fff1f2;
+        color: #9f1239;
+        border-radius: 8px;
+      }
+      .notice {
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        border: 1px solid #99f6e4;
+        background: #f0fdfa;
+        color: #115e59;
+        border-radius: 8px;
+      }
+      .topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+      .topline a { color: var(--accent); text-decoration: none; }
+      @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="topline">
+      <div>
+        <h1>zocket</h1>
+        <p>{{ t("app.tagline") }}</p>
+      </div>
+      <div class="inline">
+        <span>{{ t("ui.lang") }}:</span>
+        <a href="/?lang=en{% if selected_project %}&project={{ selected_project }}{% endif %}">EN</a>
+        <a href="/?lang=ru{% if selected_project %}&project={{ selected_project }}{% endif %}">RU</a>
+        <form method="post" action="/logout">
+          <button type="submit">{{ t("ui.logout") }}</button>
+        </form>
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+    {% if generated_password %}
+      <div class="notice">
+        {{ t("ui.generated_password_notice") }}
+        <div class="mono">{{ generated_password }}</div>
+        <div>{{ t("ui.generated_password_save_now") }}</div>
+      </div>
+    {% endif %}
+
+    <div class="layout">
+      <aside class="card">
+        <h2>{{ t("ui.projects") }}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>{{ t("ui.name") }}</th>
+              <th>{{ t("ui.keys_count") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in projects %}
+              <tr>
+                <td><a href="/?project={{ p.project }}">{{ p.project }}</a></td>
+                <td>{{ p.secret_count }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <hr />
+        <h3>{{ t("ui.new_project") }}</h3>
+        <form method="post" action="/projects/create">
+          <input name="name" placeholder="project-name" required />
+          <input name="description" placeholder="{{ t('ui.optional_desc') }}" />
+          <div class="folder-field">
+            <input id="create-folder-path" name="folder_path" placeholder="{{ t('ui.optional_folder') }}" readonly />
+            <button class="btn-small" type="button" onclick="openFolderPicker('create-folder-path')">{{ t("ui.choose_folder") }}</button>
+          </div>
+          <button type="submit">{{ t("ui.create") }}</button>
+        </form>
+      </aside>
+
+      <main class="card">
+        {% if selected_project %}
+          <h2>{{ selected_project }}</h2>
+          <p>
+            {{ t("ui.project_folder") }}:
+            {% if selected_project_info and selected_project_info.folder_path %}
+              <span class="mono">{{ selected_project_info.folder_path }}</span>
+            {% else %}
+              {{ t("ui.not_set") }}
+            {% endif %}
+          </p>
+          <form method="post" action="/projects/{{ selected_project }}/folder">
+            <div class="folder-field">
+              <input id="edit-folder-path" name="folder_path" placeholder="{{ t('ui.optional_folder') }}" value="{{ selected_project_info.folder_path if selected_project_info and selected_project_info.folder_path else '' }}" readonly />
+              <button class="btn-small" type="button" onclick="openFolderPicker('edit-folder-path')">{{ t("ui.choose_folder") }}</button>
+            </div>
+            <button type="submit">{{ t("ui.save_folder") }}</button>
+          </form>
+          <form method="post" action="/projects/{{ selected_project }}/folder" onsubmit="return confirm('{{ t('ui.clear_folder') }}?')">
+            <input type="hidden" name="clear" value="1" />
+            <button class="danger" type="submit">{{ t("ui.clear_folder") }}</button>
+          </form>
+          <p>
+            {% if show_values %}
+              {{ t("ui.real_values_visible") }}
+              <a href="/?project={{ selected_project }}">{{ t("ui.hide_values") }}</a>
+            {% else %}
+              {{ t("ui.masked_values_visible") }}
+              <a href="/?project={{ selected_project }}&show_values=1">{{ t("ui.show_values") }}</a>
+            {% endif %}
+          </p>
+
+          <div class="inline">
+            <form method="post" action="/projects/{{ selected_project }}/delete" onsubmit="return confirm('{{ t('ui.delete_project') }}?')">
+              <button class="danger" type="submit">{{ t("ui.delete_project") }}</button>
+            </form>
+          </div>
+
+          <h3>{{ t("ui.secrets") }}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>KEY</th>
+                <th>{{ t("ui.value") }}</th>
+                <th>{{ t("ui.description") }}</th>
+                <th>{{ t("ui.updated_at") }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in secrets %}
+                <tr>
+                  <td class="mono">{{ s.key }}</td>
+                  <td class="mono">
+                    {% if show_values %}
+                      {{ s.value }}
+                    {% else %}
+                      ***
+                    {% endif %}
+                  </td>
+                  <td>{{ s.description }}</td>
+                  <td>{{ s.updated_at }}</td>
+                  <td>
+                    <form method="post" action="/projects/{{ selected_project }}/secrets/{{ s.key }}/delete" onsubmit="return confirm('{{ t('ui.delete') }} {{ s.key }}?')">
+                      <button class="danger" type="submit">{{ t("ui.delete") }}</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <h3>{{ t("ui.add_or_update_secret") }}</h3>
+          <form method="post" action="/projects/{{ selected_project }}/secrets/upsert">
+            <input name="key" placeholder="SSH_PASSWORD" required />
+            <input name="value" placeholder="{{ t('ui.value') }}" required />
+            <input name="description" placeholder="{{ t('ui.optional_desc') }}" />
+            <button type="submit">{{ t("ui.save") }}</button>
+          </form>
+        {% else %}
+          <h2>{{ t("ui.no_projects") }}</h2>
+          <p>{{ t("ui.create_left") }}</p>
+        {% endif %}
+      </main>
+    </div>
+
+    <div id="folder-picker-modal" class="modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3>{{ t("ui.folder_picker") }}</h3>
+          <button class="btn-small danger" type="button" onclick="closeFolderPicker()">{{ t("ui.close") }}</button>
+        </div>
+        <p>{{ t("ui.current_path") }}: <span class="mono" id="folder-picker-current">-</span></p>
+        <div class="inline">
+          <button class="btn-small" type="button" id="folder-picker-up" onclick="folderPickerGoParent()">{{ t("ui.parent_folder") }}</button>
+          <button class="btn-small" type="button" onclick="folderPickerGoRoots()">{{ t("ui.roots") }}</button>
+          <button class="btn-small" type="button" id="folder-picker-select" onclick="folderPickerSelectCurrent()">{{ t("ui.select_folder") }}</button>
+        </div>
+        <div id="folder-picker-error" class="error" style="display:none"></div>
+        <div id="folder-picker-list" class="folder-list"></div>
+      </div>
+    </div>
+
+    <script>
+      const pickerState = {
+        targetId: null,
+        current: null,
+        parent: null,
+      };
+
+      const pickerModal = document.getElementById("folder-picker-modal");
+      const pickerCurrent = document.getElementById("folder-picker-current");
+      const pickerList = document.getElementById("folder-picker-list");
+      const pickerError = document.getElementById("folder-picker-error");
+      const pickerUpButton = document.getElementById("folder-picker-up");
+      const pickerSelectButton = document.getElementById("folder-picker-select");
+
+      function setPickerError(message) {
+        if (!message) {
+          pickerError.style.display = "none";
+          pickerError.textContent = "";
+          return;
+        }
+        pickerError.style.display = "block";
+        pickerError.textContent = message;
+      }
+
+      function renderFolderButtons(rows) {
+        pickerList.innerHTML = "";
+        if (!rows || rows.length === 0) {
+          const empty = document.createElement("p");
+          empty.textContent = "{{ t('ui.no_subfolders') }}";
+          pickerList.appendChild(empty);
+          return;
+        }
+        for (const row of rows) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = row.name;
+          button.addEventListener("click", () => loadFolders(row.path));
+          pickerList.appendChild(button);
+        }
+      }
+
+      async function loadFolders(path) {
+        setPickerError("");
+        pickerList.innerHTML = "<p>{{ t('ui.loading') }}</p>";
+        const query = path ? `?path=${encodeURIComponent(path)}` : "";
+        const response = await fetch(`/api/folders${query}`, { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          const message = payload && payload.error ? payload.error : "{{ t('ui.folder_picker_failed') }}";
+          setPickerError(message);
+          pickerList.innerHTML = "";
+          return;
+        }
+        pickerState.current = payload.current;
+        pickerState.parent = payload.parent;
+        pickerCurrent.textContent = payload.current || "{{ t('ui.roots') }}";
+        pickerUpButton.disabled = !payload.parent;
+        pickerSelectButton.disabled = !payload.current;
+        renderFolderButtons(payload.directories || []);
+      }
+
+      function openFolderPicker(targetId) {
+        pickerState.targetId = targetId;
+        pickerModal.hidden = false;
+        const targetInput = document.getElementById(targetId);
+        const startPath = targetInput && targetInput.value ? targetInput.value : "";
+        loadFolders(startPath);
+      }
+
+      function closeFolderPicker() {
+        pickerModal.hidden = true;
+        pickerState.targetId = null;
+        pickerState.current = null;
+        pickerState.parent = null;
+      }
+
+      function folderPickerGoParent() {
+        if (pickerState.parent) {
+          loadFolders(pickerState.parent);
+        }
+      }
+
+      function folderPickerGoRoots() {
+        loadFolders("");
+      }
+
+      function folderPickerSelectCurrent() {
+        if (!pickerState.targetId || !pickerState.current) {
+          return;
+        }
+        const targetInput = document.getElementById(pickerState.targetId);
+        if (!targetInput) {
+          return;
+        }
+        targetInput.value = pickerState.current;
+        closeFolderPicker();
+      }
+    </script>
+  </body>
+</html>

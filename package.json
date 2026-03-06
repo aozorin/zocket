@@ -1,0 +1,47 @@
+{
+  "name": "@zocket/cli",
+  "version": "1.0.0",
+  "description": "Cross-platform npm launcher for Zocket (local MCP + web vault)",
+  "license": "MIT",
+  "private": false,
+  "type": "commonjs",
+  "bin": {
+    "zocket": "bin/zocket.cjs",
+    "zocket-setup": "bin/zocket-setup.cjs"
+  },
+  "files": [
+    "bin/",
+    "docs/",
+    "scripts/",
+    "zocket/*.py",
+    "zocket/templates/*.html",
+    "pyproject.toml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test:python": "PYTHONPATH=. pytest -q",
+    "smoke:npm": "node ./bin/zocket.cjs --help"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "secrets",
+    "vault",
+    "cli",
+    "agents",
+    "codex",
+    "claude"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/zocket.git"
+  },
+  "homepage": "https://github.com/your-org/zocket#readme",
+  "bugs": {
+    "url": "https://github.com/your-org/zocket/issues"
+  }
+}
