@@ -1,5 +1,5 @@
 {
-  "name": "@aozorin/zocket",
+  "name": "@ao_zorin/zocket",
   "version": "1.0.0",
   "description": "Cross-platform npm launcher for Zocket (local MCP + web vault)",
   "license": "MIT",
