@@ -4,6 +4,7 @@ import os
 import secrets
 from functools import wraps
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote_plus
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
@@ -21,6 +22,10 @@ DEFAULT_FOLDER_PICKER_ROOTS = (
     "/var/www",
     "/var/lib",
 )
+
+THEME_STANDARD = "standard"
+THEME_ZORIN = "zorin"
+AVAILABLE_THEMES = {THEME_STANDARD, THEME_ZORIN}
 
 
 def _folder_picker_roots(config: dict) -> list[Path]:
@@ -66,6 +71,43 @@ def _current_lang(config: dict) -> str:
     return normalize_lang(str(config.get("language", "en")))
 
 
+def normalize_variant(value: str | None) -> str:
+    if not value:
+        return "dark"
+    normalized = value.strip().lower()
+    return normalized if normalized in {"light", "dark"} else "dark"
+
+
+def _current_variant(config: dict[str, Any]) -> str:
+    if "variant" in request.args:
+        variant = normalize_variant(request.args.get("variant"))
+        session["theme_variant"] = variant
+        return variant
+    stored = session.get("theme_variant")
+    if stored:
+        return normalize_variant(str(stored))
+    return normalize_variant(str(config.get("theme_variant", "dark")))
+
+
+def normalize_theme(value: str | None) -> str:
+    if not value:
+        return THEME_STANDARD
+    normalized = value.strip().lower()
+    return normalized if normalized in AVAILABLE_THEMES else THEME_STANDARD
+
+
+def _current_theme(config: dict[str, Any]) -> str:
+    arg_theme = request.args.get("theme")
+    if arg_theme:
+        theme = normalize_theme(arg_theme)
+        session["theme"] = theme
+        return theme
+    stored = session.get("theme")
+    if stored:
+        return normalize_theme(str(stored))
+    return normalize_theme(str(config.get("theme", THEME_STANDARD)))
+
+
 def _is_authenticated(config: dict) -> bool:
     if not bool(config.get("web_auth_enabled", True)):
         return True
@@ -92,8 +134,16 @@ def create_web_app(
 
     @app.context_processor
     def inject_i18n():
-        lang = _current_lang(cfg_store.load())
-        return {"t": lambda key, **kwargs: tr(lang, key, **kwargs), "lang": lang}
+        cfg_local = cfg_store.load()
+        lang = _current_lang(cfg_local)
+        theme = _current_theme(cfg_local)
+        variant = _current_variant(cfg_local)
+        return {
+            "t": lambda key, **kwargs: tr(lang, key, **kwargs),
+            "lang": lang,
+            "theme": theme,
+            "theme_variant": variant,
+        }
 
     def login_required(fn):
         @wraps(fn)
@@ -115,11 +165,15 @@ def create_web_app(
             return redirect("/")
         lang = _current_lang(cfg_local)
         error = request.args.get("error")
+        next_path = request.args.get("next") or request.path
+        theme = _current_theme(cfg_local)
         return render_template(
             "login.html",
             error=error,
             lang=lang,
             missing_password=not _has_password(cfg_local),
+            next_path=next_path,
+            theme=theme,
         )
 
     @app.post("/login")
@@ -195,6 +249,20 @@ def create_web_app(
             return redirect("/")
 
         return redirect(f"/login?error={quote_plus(tr(lang, 'ui.invalid_setup_option'))}")
+
+    @app.post("/set-theme")
+    def set_theme():
+        theme = normalize_theme(request.form.get("theme"))
+        session["theme"] = theme
+        next_url = request.form.get("next") or request.referrer or "/"
+        return redirect(next_url)
+
+    @app.post("/set-theme-variant")
+    def set_theme_variant():
+        variant = normalize_variant(request.form.get("variant"))
+        session["theme_variant"] = variant
+        next_url = request.form.get("next") or request.referrer or "/"
+        return redirect(next_url)
 
     @app.post("/logout")
     def logout():
@@ -378,6 +446,35 @@ def create_web_app(
             )
             return redirect(f"/?project={project}&error={quote_plus(str(exc))}")
         return redirect(f"/?project={project}")
+
+    @app.get("/projects/<project>/secrets/<key>/value")
+    @login_required
+    def secret_value(project: str, key: str):
+        try:
+            secret = vault.get_secret(project=project, key=key)
+            audit.log(
+                "web.secret.view",
+                "ok",
+                "web",
+                {"project": project, "key": key},
+            )
+            return jsonify(
+                {
+                    "ok": True,
+                    "key": key,
+                    "value": secret.get("value", ""),
+                    "description": secret.get("description", ""),
+                    "updated_at": secret.get("updated_at"),
+                }
+            )
+        except (ProjectNotFoundError, SecretNotFoundError) as exc:
+            audit.log(
+                "web.secret.view",
+                "failed",
+                "web",
+                {"project": project, "key": key, "error": str(exc)},
+            )
+            return jsonify({"ok": False, "error": str(exc)}), 404
 
     @app.post("/projects/<project>/delete")
     @login_required

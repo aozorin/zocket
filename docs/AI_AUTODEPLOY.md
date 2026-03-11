@@ -24,8 +24,9 @@ Deploy zocket on this machine with secure defaults:
    --autostart user (Linux/macOS) or enabled startup task (Windows)
 3) Verify:
    - web panel on http://127.0.0.1:18001
-   - MCP endpoint on http://127.0.0.1:18002/mcp
-4) Configure MCP clients using docs/CLIENTS_MCP.md.
+   - MCP SSE endpoint on http://127.0.0.1:18002/sse (Claude Code)
+   - MCP streamable endpoint on http://127.0.0.1:18003/mcp (Codex)
+4) Configure MCP clients using docs/CLIENTS_MCP.md (Codex + Claude Code only).
 5) Return final report with commands executed and health-check results.
 ```
 

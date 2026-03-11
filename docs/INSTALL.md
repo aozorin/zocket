@@ -2,8 +2,9 @@
 
 This guide installs **zocket** as:
 - local web panel on `127.0.0.1:18001`
-- MCP HTTP server on `127.0.0.1:18002`
-- optional MCP stdio server for CLI agents
+- MCP SSE server on `127.0.0.1:18002/sse` (Claude Code)
+- MCP streamable HTTP server on `127.0.0.1:18003/mcp` (Codex)
+- optional MCP stdio server for local CLI use
 
 ## 1) Quick Install (recommended)
 
@@ -82,7 +83,13 @@ This creates scheduled tasks:
 
 This repo now includes an npm wrapper package.
 
-Global install from your git repo (example):
+Global install from npm:
+```bash
+npm i -g @zocket/cli
+zocket setup
+```
+
+Or install from your git repo (example):
 ```bash
 npm i -g github:your-org/zocket
 ```
@@ -96,7 +103,8 @@ Then use normal CLI:
 ```bash
 zocket init
 zocket web --host 127.0.0.1 --port 18001
-zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18002
+zocket mcp --transport sse --mode metadata --host 127.0.0.1 --port 18002
+zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18003
 ```
 
 ## 6) Systemd hardening on Linux (production)
@@ -115,16 +123,56 @@ Check:
 ```bash
 systemctl status zocket-web.service --no-pager
 systemctl status zocket-mcp-http.service --no-pager
+systemctl status zocket-mcp-http-streamable.service --no-pager
+```
+
+### Optional: systemd unit for Codex (streamable HTTP on 18003)
+
+Create `/etc/systemd/system/zocket-mcp-http-streamable.service`:
+```ini
+[Unit]
+Description=Zocket MCP HTTP Streamable (system)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zocketd
+Group=zocketd
+Environment=ZOCKET_HOME=/var/lib/zocket
+ExecStart=/usr/bin/python3 -m zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18003
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectControlGroups=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths=/var/lib/zocket
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now zocket-mcp-http-streamable.service
 ```
 
 ### Linux user-level autostart (no root)
 ```bash
-zocket autostart install --target both --web-port 18001 --mcp-port 18002 --mcp-mode metadata
+zocket autostart install --target web --web-port 18001
+zocket autostart install --target mcp --mcp-port 18002 --mcp-mode metadata --mcp-host 127.0.0.1
 zocket autostart status --target both
 ```
 
 ### macOS launchd autostart (manual)
-Create `~/Library/LaunchAgents/dev.zocket.web.plist` and `dev.zocket.mcp.plist`:
+Create `~/Library/LaunchAgents/dev.zocket.web.plist`, `dev.zocket.mcp-sse.plist`,
+and `dev.zocket.mcp-streamable.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -149,10 +197,63 @@ Create `~/Library/LaunchAgents/dev.zocket.web.plist` and `dev.zocket.mcp.plist`:
 </plist>
 ```
 
+SSE MCP (`dev.zocket.mcp-sse.plist`):
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key><string>dev.zocket.mcp-sse</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/YOUR_USER/.local/share/zocket/venv/bin/python3</string>
+      <string>-m</string><string>zocket</string>
+      <string>mcp</string><string>--transport</string><string>sse</string>
+      <string>--mode</string><string>metadata</string>
+      <string>--host</string><string>127.0.0.1</string>
+      <string>--port</string><string>18002</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>ZOCKET_HOME</key><string>/Users/YOUR_USER/.zocket</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+  </dict>
+</plist>
+```
+
+Streamable HTTP MCP (`dev.zocket.mcp-streamable.plist`):
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key><string>dev.zocket.mcp-streamable</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/YOUR_USER/.local/share/zocket/venv/bin/python3</string>
+      <string>-m</string><string>zocket</string>
+      <string>mcp</string><string>--transport</string><string>streamable-http</string>
+      <string>--mode</string><string>metadata</string>
+      <string>--host</string><string>127.0.0.1</string>
+      <string>--port</string><string>18003</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>ZOCKET_HOME</key><string>/Users/YOUR_USER/.zocket</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+  </dict>
+</plist>
+```
+
 Load services:
 ```bash
 launchctl load ~/Library/LaunchAgents/dev.zocket.web.plist
-launchctl load ~/Library/LaunchAgents/dev.zocket.mcp.plist
+launchctl load ~/Library/LaunchAgents/dev.zocket.mcp-sse.plist
+launchctl load ~/Library/LaunchAgents/dev.zocket.mcp-streamable.plist
 ```
 
 ### Windows autostart (Task Scheduler)
@@ -163,10 +264,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install-zocket.ps1 -EnableAut
 
 Or create manually:
 - task `ZocketWeb` on logon
-- task `ZocketMcpHttp` on logon
+- task `ZocketMcpSse` on logon
+- task `ZocketMcpStreamable` on logon
 - actions:
   - `python -m zocket web --host 127.0.0.1 --port 18001`
-  - `python -m zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18002`
+  - `python -m zocket mcp --transport sse --mode metadata --host 127.0.0.1 --port 18002`
+  - `python -m zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18003`
 
 ## 7) First web open
 
@@ -179,6 +282,7 @@ Open `http://127.0.0.1:18001` and choose one:
 
 ```bash
 curl -I http://127.0.0.1:18001/login
-curl -I http://127.0.0.1:18002/
+curl -I http://127.0.0.1:18002/sse
+curl -I http://127.0.0.1:18003/mcp
 zocket mcp --transport stdio --mode metadata
 ```

@@ -6,99 +6,398 @@
     <title>zocket</title>
     <style>
       :root {
-        --bg: #f8fafc;
-        --text: #0f172a;
-        --muted: #475569;
+        --primary-color: #0088cc;
+        --primary-accent: #00a1ff;
+        --primary-dark: #006699;
+        --primary-light: rgba(0, 136, 204, 0.12);
+        --light-bg: #ffffff;
+        --light-surface: #f8f9fa;
+        --light-text: #2c2c2c;
+        --light-muted: #6c757d;
+        --dark-bg: #18222d;
+        --dark-surface: #212e3c;
+        --dark-text: #e9ecef;
+        --dark-muted: #adb5bd;
+        --border-radius: 14px;
+        --transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+        --shadow-light: 0 10px 30px rgba(0, 0, 0, 0.08);
+        --shadow-dark: 0 20px 45px rgba(0, 0, 0, 0.25);
+        --page-gradient: radial-gradient(circle at 0 0, #e2e8f0 0, #f8fafc 45%);
+        --bg: var(--light-bg);
+        --text: var(--light-text);
+        --muted: var(--light-muted);
         --border: #cbd5e1;
-        --accent: #0f766e;
-        --danger: #be123c;
-        --card: #ffffff;
+        --card: var(--light-surface);
+        --danger: #ff6b6b;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         padding: 24px;
-        background: radial-gradient(circle at 0 0, #e2e8f0 0, var(--bg) 45%);
+        min-height: 100vh;
+        background: var(--page-gradient);
         color: var(--text);
-        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
       }
-      h1, h2, h3 { margin: 0 0 10px; }
-      p { margin: 0 0 12px; color: var(--muted); }
-      .layout { display: grid; gap: 16px; grid-template-columns: 320px 1fr; }
-      .card { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 14px; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
-      input, button, textarea {
-        width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; font: inherit;
+      body[data-theme="zorin"] {
+        --bg: var(--dark-bg);
+        --text: var(--dark-text);
+        --muted: var(--dark-muted);
+        --border: rgba(255, 255, 255, 0.15);
+        --card: rgba(24, 34, 45, 0.9);
+        --page-gradient: radial-gradient(circle at 15% -10%, rgba(0, 136, 204, 0.4), rgba(8, 16, 30, 0.95) 45%), radial-gradient(circle at 80% 20%, rgba(0, 136, 204, 0.18), rgba(8, 11, 24, 0) 70%), linear-gradient(180deg, #18222d 0%, #0f172a 60%, #0b1a2b 100%);
       }
-      button { background: var(--accent); color: white; border: none; cursor: pointer; }
-      .danger { background: var(--danger); }
-      .inline { display: inline-flex; gap: 8px; align-items: center; }
-      .inline form { margin: 0; }
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-      .btn-small { width: auto; padding: 8px 12px; }
-      .folder-field { display: flex; gap: 8px; align-items: center; }
-      .folder-field input { margin-bottom: 0; }
+      body[data-theme="zorin"][data-theme-variant="light"] {
+        --bg: var(--light-bg);
+        --text: var(--light-text);
+        --muted: var(--light-muted);
+        --border: rgba(0, 136, 204, 0.25);
+        --card: rgba(255, 255, 255, 0.95);
+        --page-gradient: radial-gradient(circle at 25% -20%, rgba(0, 136, 204, 0.25), transparent 45%), radial-gradient(circle at 80% 5%, rgba(0, 136, 204, 0.1), transparent 70%), linear-gradient(180deg, #ffffff 0%, #d7efff 100%);
+      }
+      h1, h2, h3 {
+        margin: 0 0 10px;
+      }
+      p {
+        margin: 0 0 12px;
+        color: var(--muted);
+      }
+      .layout {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 320px 1fr;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 30px;
+      }
+      body[data-theme="zorin"] .layout {
+        background: rgba(7, 11, 32, 0.7);
+        border: 1px solid rgba(124, 230, 255, 0.3);
+        padding: 32px;
+        border-radius: 32px;
+        box-shadow: var(--shadow-dark);
+        backdrop-filter: blur(32px);
+      }
+      body[data-theme="zorin"][data-theme-variant="light"] .layout {
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(0, 136, 204, 0.2);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+      }
+      .card {
+        border-radius: var(--border-radius);
+        background: var(--card);
+        border: 1px solid var(--border);
+        padding: 22px;
+        box-shadow: var(--shadow-light);
+        transition: var(--transition);
+      }
+      .card:hover {
+        transform: translateY(-3px);
+      }
+      .gradient-text {
+        background: linear-gradient(90deg, var(--primary-color), var(--primary-accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        display: inline-block;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      .inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      input, button, textarea, select {
+        width: 100%;
+        padding: 12px;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border);
+        margin-bottom: 12px;
+        font: inherit;
+        background: var(--card);
+        color: var(--text);
+        transition: var(--transition);
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.25);
+      }
+      button {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-accent));
+        color: white;
+        border: none;
+        cursor: pointer;
+        box-shadow: var(--shadow-light);
+      }
+      button:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 136, 204, 0.35);
+      }
+      .btn-small {
+        width: auto;
+        padding: 8px 12px;
+      }
+      .danger {
+        background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+      }
+      .theme-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .styled-select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding: 10px 28px 10px 16px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0)) border-box, var(--card);
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        color: var(--text);
+        font-weight: 600;
+        cursor: pointer;
+        background-position: right 10px center, center;
+        background-size: 12px auto, 100% 100%;
+        background-repeat: no-repeat, no-repeat;
+        background-image: url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"%3E%3Cpolyline points=\"6 8 10 12 14 8\"/%3E%3C/svg%3E'), none;
+      }
+      .styled-select:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.2);
+      }
+      .variant-toggle {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        margin-left: 6px;
+      }
+      body[data-theme="zorin"] .variant-toggle {
+        display: inline-flex;
+      }
+      .variant-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--primary-color);
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      .variant-button.active {
+        background: var(--primary-color);
+        color: #fff;
+        box-shadow: 0 0 12px rgba(0, 136, 204, 0.6);
+      }
+      .theme-icon {
+        width: 18px;
+        height: 18px;
+        display: block;
+      }
+      .topline {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .topline a,
+      .topline a:visited,
+      .topline a:active {
+        color: var(--primary-color);
+      }
+      a,
+      a:visited,
+      a:active,
+      a:hover,
+      a:focus {
+        color: var(--primary-color);
+      }
+      body[data-theme="zorin"] .topline {
+        background: rgba(4, 8, 25, 0.6);
+        padding: 16px 20px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        align-items: center;
+      }
+      body[data-theme="zorin"][data-theme-variant="light"] .topline {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0, 136, 204, 0.35);
+        box-shadow: 0 12px 25px rgba(15, 25, 60, 0.1);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      .folder-field,
+      .folder-actions-inline,
+      .secret-preset-row {
+        width: 100%;
+      }
+      .folder-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .folder-panel {
+        border-radius: 22px;
+        padding: 18px 22px;
+        background: linear-gradient(135deg, rgba(0, 136, 204, 0.15), rgba(255, 255, 255, 0.05)), var(--card);
+        border: 1px solid rgba(0, 136, 204, 0.25);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+      }
+      .folder-panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, rgba(0, 136, 204, 0.3), transparent 60%);
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .folder-panel__note {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      body[data-theme="zorin"] .folder-panel {
+        background: rgba(8, 11, 24, 0.6);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+      }
+      body[data-theme="zorin"][data-theme-variant="light"] .folder-panel {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: rgba(0, 136, 204, 0.25);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      }
+      body[data-theme="zorin"] .folder-panel__note {
+        color: var(--danger);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .folder-actions-inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .folder-actions-inline button {
+        width: auto;
+        min-width: 120px;
+      }
+      .folder-actions-inline input {
+        flex: 1 1 320px;
+      }
       .folder-list {
         max-height: 260px;
         overflow: auto;
         border: 1px solid var(--border);
-        border-radius: 8px;
+        border-radius: var(--border-radius);
         padding: 8px;
       }
-      .folder-list button {
-        width: 100%;
-        text-align: left;
-        margin-bottom: 6px;
+      .folder-search {
+        margin-top: 8px;
       }
-      .folder-list button:last-child { margin-bottom: 0; }
-      .modal[hidden] { display: none; }
+      .secret-preset-row select {
+        min-width: 260px;
+      }
+      .secret-preset-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .secret-preset-group > * {
+        flex: 1 1 220px;
+        min-width: 180px;
+      }
+      .secret-preset-group[hidden] {
+        display: none;
+      }
+      .secret-actions,
+      .secret-list-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: nowrap;
+        align-items: center;
+      }
+      .secret-actions form {
+        margin: 0;
+      }
+      .secret-actions button,
+      .secret-list-actions button {
+        width: auto;
+        white-space: nowrap;
+      }
       .modal {
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.55);
+        background: rgba(7, 11, 32, 0.85);
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 16px;
       }
+      .modal[hidden] {
+        display: none;
+      }
       .modal-card {
-        width: min(760px, 96vw);
+        width: min(780px, 96vw);
         max-height: 90vh;
         overflow: auto;
-        border: 1px solid var(--border);
-        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: var(--border-radius);
         background: var(--card);
-        padding: 14px;
-      }
-      .modal-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
-      .error {
-        margin-bottom: 16px;
-        padding: 10px 12px;
-        border: 1px solid #fecdd3;
-        background: #fff1f2;
-        color: #9f1239;
-        border-radius: 8px;
+        padding: 20px;
+        box-shadow: var(--shadow-dark);
+        backdrop-filter: blur(24px);
       }
       .notice {
-        margin-bottom: 16px;
-        padding: 10px 12px;
-        border: 1px solid #99f6e4;
-        background: #f0fdfa;
-        color: #115e59;
-        border-radius: 8px;
+        border: 1px solid rgba(0, 136, 204, 0.3);
+        background: rgba(0, 136, 204, 0.08);
+        color: var(--primary-dark);
       }
-      .topline { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
-      .topline a { color: var(--accent); text-decoration: none; }
-      @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+      .error {
+        border: 1px solid #ffe0e6;
+        background: #fff2f5;
+        color: #9f1239;
+        border-radius: 10px;
+        padding: 12px;
+      }
+      body[data-theme="zorin"] .error {
+        background: rgba(248, 113, 113, 0.12);
+        border-color: rgba(248, 113, 113, 0.4);
+        color: #ffe4e6;
+        box-shadow: 0 0 12px rgba(248, 113, 113, 0.25);
+      }
+      body[data-theme="zorin"][data-theme-variant="light"] .error {
+        background: rgba(248, 113, 113, 0.2);
+        border-color: rgba(248, 113, 113, 0.6);
+        color: #991b1b;
+      }
+      @media (max-width: 980px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
-  <body>
+  <body data-theme="{{ theme }}" data-theme-variant="{{ theme_variant }}">
     <div class="topline">
       <div>
         <h1>zocket</h1>
@@ -108,12 +407,45 @@
         <span>{{ t("ui.lang") }}:</span>
         <a href="/?lang=en{% if selected_project %}&project={{ selected_project }}{% endif %}">EN</a>
         <a href="/?lang=ru{% if selected_project %}&project={{ selected_project }}{% endif %}">RU</a>
+        <form method="post" action="/set-theme" class="theme-inline">
+          <label for="main-theme-select">{{ t("ui.theme") }}:</label>
+          <select id="main-theme-select" class="styled-select" name="theme" onchange="this.form.submit();">
+            <option value="standard" {% if theme == "standard" %}selected{% endif %}>{{ t("ui.theme_standard") }}</option>
+            <option value="zorin" {% if theme == "zorin" %}selected{% endif %}>{{ t("ui.theme_zorin") }}</option>
+          </select>
+          <input type="hidden" name="next" value="{{ request.full_path }}" />
+        </form>
+        {% if theme == "zorin" %}
+        <form method="post" action="/set-theme-variant" class="variant-toggle">
+          <input type="hidden" name="next" value="{{ request.full_path }}" />
+          {% set next_variant = 'dark' if theme_variant == 'light' else 'light' %}
+          {% set label_key = 'ui.variant_dark' if next_variant == 'dark' else 'ui.variant_light' %}
+          <button type="submit" name="variant" value="{{ next_variant }}" class="variant-button" aria-label="{{ t(label_key) }}">
+            {% if theme_variant == 'light' %}
+            <svg class="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            {% else %}
+            <svg class="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            {% endif %}
+          </button>
+        </form>
+        {% endif %}
         <form method="post" action="/logout">
           <button type="submit">{{ t("ui.logout") }}</button>
         </form>
       </div>
     </div>
-
     {% if error %}
       <div class="error">{{ error }}</div>
     {% endif %}
@@ -136,10 +468,10 @@
             </tr>
           </thead>
           <tbody>
-            {% for p in projects %}
+            {% for project in projects %}
               <tr>
-                <td><a href="/?project={{ p.project }}">{{ p.project }}</a></td>
-                <td>{{ p.secret_count }}</td>
+                <td><a href="/?project={{ project.project }}">{{ project.project }}</a></td>
+                <td>{{ project.secret_count }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -149,8 +481,8 @@
         <form method="post" action="/projects/create">
           <input name="name" placeholder="project-name" required />
           <input name="description" placeholder="{{ t('ui.optional_desc') }}" />
-          <div class="folder-field">
-            <input id="create-folder-path" name="folder_path" placeholder="{{ t('ui.optional_folder') }}" readonly />
+          <div class="folder-field create-gap">
+            <input id="create-folder-path" name="folder_path" placeholder="{{ t('ui.optional_folder') }}" />
             <button class="btn-small" type="button" onclick="openFolderPicker('create-folder-path')">{{ t("ui.choose_folder") }}</button>
           </div>
           <button type="submit">{{ t("ui.create") }}</button>
@@ -168,35 +500,32 @@
               {{ t("ui.not_set") }}
             {% endif %}
           </p>
-          <form method="post" action="/projects/{{ selected_project }}/folder">
-            <div class="folder-field">
-              <input id="edit-folder-path" name="folder_path" placeholder="{{ t('ui.optional_folder') }}" value="{{ selected_project_info.folder_path if selected_project_info and selected_project_info.folder_path else '' }}" readonly />
+          <div class="folder-panel">
+            <form method="post" action="/projects/{{ selected_project }}/folder" class="folder-actions-inline">
+              <input id="edit-folder-path" name="folder_path" placeholder="{{ t('ui.optional_folder') }}" value="{{ selected_project_info.folder_path if selected_project_info and selected_project_info.folder_path else '' }}" />
               <button class="btn-small" type="button" onclick="openFolderPicker('edit-folder-path')">{{ t("ui.choose_folder") }}</button>
-            </div>
-            <button type="submit">{{ t("ui.save_folder") }}</button>
-          </form>
-          <form method="post" action="/projects/{{ selected_project }}/folder" onsubmit="return confirm('{{ t('ui.clear_folder') }}?')">
-            <input type="hidden" name="clear" value="1" />
-            <button class="danger" type="submit">{{ t("ui.clear_folder") }}</button>
-          </form>
-          <p>
-            {% if show_values %}
-              {{ t("ui.real_values_visible") }}
-              <a href="/?project={{ selected_project }}">{{ t("ui.hide_values") }}</a>
-            {% else %}
-              {{ t("ui.masked_values_visible") }}
-              <a href="/?project={{ selected_project }}&show_values=1">{{ t("ui.show_values") }}</a>
-            {% endif %}
-          </p>
+              <button class="btn-small" type="submit">{{ t("ui.save_folder") }}</button>
+              <button class="btn-small danger" type="submit" name="clear" value="1" onclick="return confirm('{{ t('ui.clear_folder') }}?')">{{ t("ui.clear_folder") }}</button>
+            </form>
+            <p class="folder-panel__note">
+              {% if show_values %}
+                {{ t("ui.real_values_visible") }}
+                <a href="/?project={{ selected_project }}">{{ t("ui.hide_values") }}</a>
+              {% else %}
+                {{ t("ui.masked_values_visible") }}
+                <a href="/?project={{ selected_project }}&show_values=1">{{ t("ui.show_values") }}</a>
+              {% endif %}
+            </p>
+          </div>
 
-          <div class="inline">
+          <div class="inline secret-list-actions">
             <form method="post" action="/projects/{{ selected_project }}/delete" onsubmit="return confirm('{{ t('ui.delete_project') }}?')">
               <button class="danger" type="submit">{{ t("ui.delete_project") }}</button>
             </form>
           </div>
 
           <h3>{{ t("ui.secrets") }}</h3>
-          <table>
+          <table id="secrets-table">
             <thead>
               <tr>
                 <th>KEY</th>
@@ -208,7 +537,7 @@
             </thead>
             <tbody>
               {% for s in secrets %}
-                <tr>
+                <tr data-secret-key="{{ s.key }}">
                   <td class="mono">{{ s.key }}</td>
                   <td class="mono">
                     {% if show_values %}
@@ -220,9 +549,12 @@
                   <td>{{ s.description }}</td>
                   <td>{{ s.updated_at }}</td>
                   <td>
-                    <form method="post" action="/projects/{{ selected_project }}/secrets/{{ s.key }}/delete" onsubmit="return confirm('{{ t('ui.delete') }} {{ s.key }}?')">
-                      <button class="danger" type="submit">{{ t("ui.delete") }}</button>
-                    </form>
+                    <div class="secret-actions">
+                      <button type="button" class="btn-small" data-edit-secret="{{ s.key }}">{{ t("ui.edit_secret") }}</button>
+                      <form method="post" action="/projects/{{ selected_project }}/secrets/{{ s.key }}/delete" onsubmit="return confirm('{{ t('ui.delete') }} {{ s.key }}?')">
+                        <button class="danger" type="submit">{{ t("ui.delete") }}</button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               {% endfor %}
@@ -230,9 +562,122 @@
           </table>
 
           <h3>{{ t("ui.add_or_update_secret") }}</h3>
-          <form method="post" action="/projects/{{ selected_project }}/secrets/upsert">
-            <input name="key" placeholder="SSH_PASSWORD" required />
-            <input name="value" placeholder="{{ t('ui.value') }}" required />
+          <form method="post" action="/projects/{{ selected_project }}/secrets/upsert" id="secret-form">
+          <div class="secret-preset-row">
+            <span>{{ t("ui.secret_preset") }}</span>
+            <select id="secret-preset" name="preset">
+              <option value="" disabled selected>{{ t('ui.choose_preset') }}</option>
+                <option value="custom">Custom key/value</option>
+                <option value="ssh">SSH credentials</option>
+                <option value="account">Account login/password</option>
+                <option value="email">Email</option>
+                <option value="api">API credentials</option>
+                <option value="db">Database credentials</option>
+                <option value="oauth">OAuth 2.0</option>
+                <option value="tls">TLS certificate</option>
+                <option value="webhook">Webhook</option>
+                <option value="ftp">FTP access</option>
+                <option value="ftps">FTPS access</option>
+                <option value="sftp">SFTP access</option>
+                <option value="smtp">SMTP credentials</option>
+                <option value="imap">IMAP credentials</option>
+                <option value="pop3">POP3 credentials</option>
+              </select>
+            </div>
+            <div class="secret-preset-groups">
+              <input type="hidden" id="secret-key" name="key" />
+              <input type="hidden" id="secret-value-hidden" name="value" />
+              <div class="secret-preset-group" data-secret-preset="custom">
+                <input id="custom-name" name="custom_name" placeholder="{{ t('ui.friendly_name') }}" />
+                <input id="custom-key" name="custom_key" placeholder="{{ t('ui.key') }}" required />
+                <input id="custom-value" name="custom_value" placeholder="{{ t('ui.value') }}" required />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="ssh" hidden>
+                <input id="ssh-user" name="ssh_user" placeholder="SSH user" />
+                <input id="ssh-host" name="ssh_host" placeholder="SSH host" />
+                <input id="ssh-port" name="ssh_port" placeholder="SSH port" value="21" />
+                <input id="ssh-password" type="password" name="ssh_password" placeholder="Key" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="account" hidden>
+                <input id="account-login" name="account_login" placeholder="Account login" />
+                <input id="account-password" type="password" name="account_password" placeholder="Account password" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="email" hidden>
+                <input id="email-value" type="email" name="email_value" placeholder="Email" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="api" hidden>
+                <input id="api-platform" name="api_platform" placeholder="Platform name" />
+                <input id="api-key" type="password" name="api_key" placeholder="API key" />
+                <input id="api-base-url" name="api_base_url" placeholder="Base URL (optional)" />
+                <select id="api-auth-type" name="api_auth_type">
+                  <option value="">Auth type (optional)</option>
+                  <option value="BEARER">Bearer</option>
+                  <option value="BASIC">Basic</option>
+                  <option value="TOKEN">Token</option>
+                  <option value="CUSTOM">Custom</option>
+                </select>
+              </div>
+              <div class="secret-preset-group" data-secret-preset="db" hidden>
+                <input id="db-host" name="db_host" placeholder="DB host" />
+                <input id="db-port" name="db_port" placeholder="DB port" value="5432" />
+                <input id="db-user" name="db_user" placeholder="DB user" />
+                <input id="db-password" name="db_password" placeholder="DB password" type="password" />
+                <input id="db-name" name="db_name" placeholder="DB name" />
+                <input id="db-driver" name="db_driver" placeholder="Driver prefix (optional)" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="oauth" hidden>
+                <input id="oauth-client-id" name="oauth_client_id" placeholder="Client ID" />
+                <input id="oauth-client-secret" name="oauth_client_secret" placeholder="Client secret" type="password" />
+                <input id="oauth-redirect" name="oauth_redirect" placeholder="Redirect URI (optional)" />
+                <input id="oauth-scope" name="oauth_scope" placeholder="Scope (optional)" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="tls" hidden>
+                <textarea id="tls-cert" name="tls_cert" placeholder="TLS cert"></textarea>
+                <textarea id="tls-key" name="tls_key" placeholder="TLS key"></textarea>
+                <input id="tls-passphrase" name="tls_passphrase" placeholder="TLS passphrase (optional)" type="password" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="webhook" hidden>
+                <input id="webhook-url" name="webhook_url" placeholder="Webhook URL" />
+                <input id="webhook-secret" name="webhook_secret" placeholder="Webhook secret (optional)" type="password" />
+                <input id="webhook-method" name="webhook_method" placeholder="HTTP method (optional)" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="ftp" hidden>
+                <input id="ftp-host" name="ftp_host" placeholder="Host" />
+                <input id="ftp-user" name="ftp_user" placeholder="User" />
+                <input id="ftp-port" name="ftp_port" placeholder="Port" value="21" />
+                <input id="ftp-password" name="ftp_password" placeholder="Password" type="password" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="ftps" hidden>
+                <input id="ftps-host" name="ftps_host" placeholder="Host" />
+                <input id="ftps-user" name="ftps_user" placeholder="User" />
+                <input id="ftps-port" name="ftps_port" placeholder="Port" value="990" />
+                <input id="ftps-password" name="ftps_password" placeholder="Password" type="password" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="sftp" hidden>
+                <input id="sftp-host" name="sftp_host" placeholder="Host" />
+                <input id="sftp-user" name="sftp_user" placeholder="User" />
+                <input id="sftp-port" name="sftp_port" placeholder="Port" value="22" />
+                <input id="sftp-password" name="sftp_password" placeholder="Password" type="password" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="smtp" hidden>
+                <input id="smtp-host" name="smtp_host" placeholder="Host" />
+                <input id="smtp-user" name="smtp_user" placeholder="User" />
+                <input id="smtp-port" name="smtp_port" placeholder="Port" value="587" />
+                <input id="smtp-password" name="smtp_password" placeholder="Password" type="password" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="imap" hidden>
+                <input id="imap-host" name="imap_host" placeholder="Host" />
+                <input id="imap-user" name="imap_user" placeholder="User" />
+                <input id="imap-port" name="imap_port" placeholder="Port" value="993" />
+                <input id="imap-password" name="imap_password" placeholder="Password" type="password" />
+              </div>
+              <div class="secret-preset-group" data-secret-preset="pop3" hidden>
+                <input id="pop3-host" name="pop3_host" placeholder="Host" />
+                <input id="pop3-user" name="pop3_user" placeholder="User" />
+                <input id="pop3-port" name="pop3_port" placeholder="Port" value="995" />
+                <input id="pop3-password" name="pop3_password" placeholder="Password" type="password" />
+              </div>
+            </div>
             <input name="description" placeholder="{{ t('ui.optional_desc') }}" />
             <button type="submit">{{ t("ui.save") }}</button>
           </form>
@@ -255,108 +700,363 @@
           <button class="btn-small" type="button" onclick="folderPickerGoRoots()">{{ t("ui.roots") }}</button>
           <button class="btn-small" type="button" id="folder-picker-select" onclick="folderPickerSelectCurrent()">{{ t("ui.select_folder") }}</button>
         </div>
+        <input id="folder-picker-search" class="folder-search" type="text" placeholder="{{ t('ui.folder_search') }}" autocomplete="off" />
         <div id="folder-picker-error" class="error" style="display:none"></div>
         <div id="folder-picker-list" class="folder-list"></div>
       </div>
     </div>
 
     <script>
-      const pickerState = {
-        targetId: null,
-        current: null,
-        parent: null,
-      };
+      const folderPickerModal = document.getElementById("folder-picker-modal");
+      const folderPickerCurrent = document.getElementById("folder-picker-current");
+      const folderPickerList = document.getElementById("folder-picker-list");
+      const folderPickerError = document.getElementById("folder-picker-error");
+      const folderPickerUp = document.getElementById("folder-picker-up");
+      const folderPickerSelect = document.getElementById("folder-picker-select");
+      const folderPickerSearch = document.getElementById("folder-picker-search");
+      let folderPickerState = { targetId: null, current: null, parent: null };
+      let folderPickerDirs = [];
 
-      const pickerModal = document.getElementById("folder-picker-modal");
-      const pickerCurrent = document.getElementById("folder-picker-current");
-      const pickerList = document.getElementById("folder-picker-list");
-      const pickerError = document.getElementById("folder-picker-error");
-      const pickerUpButton = document.getElementById("folder-picker-up");
-      const pickerSelectButton = document.getElementById("folder-picker-select");
+      const noSubfoldersText = {{ t("ui.no_subfolders")|tojson }};
+      const noMatchingFoldersText = {{ t("ui.no_matching_folders")|tojson }};
+      const loadingText = {{ t("ui.loading")|tojson }};
 
-      function setPickerError(message) {
+      folderPickerModal.hidden = true;
+
+      function setFolderPickerError(message) {
         if (!message) {
-          pickerError.style.display = "none";
-          pickerError.textContent = "";
+          folderPickerError.style.display = "none";
+          folderPickerError.textContent = "";
           return;
         }
-        pickerError.style.display = "block";
-        pickerError.textContent = message;
+        folderPickerError.style.display = "block";
+        folderPickerError.textContent = message;
       }
 
       function renderFolderButtons(rows) {
-        pickerList.innerHTML = "";
+        folderPickerList.innerHTML = "";
         if (!rows || rows.length === 0) {
           const empty = document.createElement("p");
-          empty.textContent = "{{ t('ui.no_subfolders') }}";
-          pickerList.appendChild(empty);
+          empty.textContent = folderPickerSearch.value.trim() ? noMatchingFoldersText : noSubfoldersText;
+          folderPickerList.appendChild(empty);
           return;
         }
         for (const row of rows) {
           const button = document.createElement("button");
           button.type = "button";
           button.textContent = row.name;
-          button.addEventListener("click", () => loadFolders(row.path));
-          pickerList.appendChild(button);
+          button.addEventListener("click", () => loadFolderList(row.path));
+          folderPickerList.appendChild(button);
         }
       }
 
-      async function loadFolders(path) {
-        setPickerError("");
-        pickerList.innerHTML = "<p>{{ t('ui.loading') }}</p>";
+      function applyFolderSearchFilter() {
+        const q = folderPickerSearch.value.trim().toLowerCase();
+        if (!q) {
+          renderFolderButtons(folderPickerDirs);
+          return;
+        }
+        const filtered = folderPickerDirs.filter((row) => row.name.toLowerCase().includes(q));
+        renderFolderButtons(filtered);
+      }
+
+      async function loadFolderList(path) {
+        setFolderPickerError("");
+        folderPickerList.innerHTML = `<p>${loadingText}</p>`;
         const query = path ? `?path=${encodeURIComponent(path)}` : "";
         const response = await fetch(`/api/folders${query}`, { credentials: "same-origin" });
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
-          const message = payload && payload.error ? payload.error : "{{ t('ui.folder_picker_failed') }}";
-          setPickerError(message);
-          pickerList.innerHTML = "";
+          const message = payload && payload.error ? payload.error : {{ t('ui.folder_picker_failed')|tojson }};
+          setFolderPickerError(message);
+          folderPickerList.innerHTML = "";
           return;
         }
-        pickerState.current = payload.current;
-        pickerState.parent = payload.parent;
-        pickerCurrent.textContent = payload.current || "{{ t('ui.roots') }}";
-        pickerUpButton.disabled = !payload.parent;
-        pickerSelectButton.disabled = !payload.current;
-        renderFolderButtons(payload.directories || []);
+        folderPickerState.current = payload.current;
+        folderPickerState.parent = payload.parent;
+        folderPickerCurrent.textContent = payload.current || {{ t('ui.roots')|tojson }};
+        folderPickerUp.disabled = !payload.parent;
+        folderPickerSelect.disabled = !payload.current;
+        folderPickerDirs = payload.directories || [];
+        applyFolderSearchFilter();
       }
 
       function openFolderPicker(targetId) {
-        pickerState.targetId = targetId;
-        pickerModal.hidden = false;
+        folderPickerState.targetId = targetId;
+        folderPickerModal.hidden = false;
+        folderPickerSearch.value = "";
         const targetInput = document.getElementById(targetId);
         const startPath = targetInput && targetInput.value ? targetInput.value : "";
-        loadFolders(startPath);
+        loadFolderList(startPath);
       }
 
       function closeFolderPicker() {
-        pickerModal.hidden = true;
-        pickerState.targetId = null;
-        pickerState.current = null;
-        pickerState.parent = null;
+        folderPickerModal.hidden = true;
+        folderPickerState = { targetId: null, current: null, parent: null };
+        folderPickerDirs = [];
+        folderPickerSearch.value = "";
       }
 
+      folderPickerModal.addEventListener("click", (event) => {
+        if (event.target === folderPickerModal) {
+          closeFolderPicker();
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !folderPickerModal.hidden) {
+          closeFolderPicker();
+        }
+      });
+
       function folderPickerGoParent() {
-        if (pickerState.parent) {
-          loadFolders(pickerState.parent);
+        if (folderPickerState.parent) {
+          loadFolderList(folderPickerState.parent);
         }
       }
 
       function folderPickerGoRoots() {
-        loadFolders("");
+        loadFolderList("");
       }
 
       function folderPickerSelectCurrent() {
-        if (!pickerState.targetId || !pickerState.current) {
+        if (!folderPickerState.targetId || !folderPickerState.current) {
           return;
         }
-        const targetInput = document.getElementById(pickerState.targetId);
+        const targetInput = document.getElementById(folderPickerState.targetId);
         if (!targetInput) {
           return;
         }
-        targetInput.value = pickerState.current;
+        targetInput.value = folderPickerState.current;
         closeFolderPicker();
       }
-    </script>
+
+      folderPickerSearch.addEventListener("input", applyFolderSearchFilter);
+
+      const secretPreset = document.getElementById("secret-preset");
+      const secretPresetGroups = Array.from(document.querySelectorAll("[data-secret-preset]"));
+      const presetRequiredMap = {
+        custom: ["custom-key", "custom-value"],
+        ssh: ["ssh-user", "ssh-host", "ssh-password"],
+        account: ["account-login", "account-password"],
+        email: ["email-value"],
+        api: ["api-key"],
+        ftp: ["ftp-host", "ftp-user", "ftp-password"],
+        ftps: ["ftps-host", "ftps-user", "ftps-password"],
+        sftp: ["sftp-host", "sftp-user", "sftp-password"],
+        smtp: ["smtp-host", "smtp-user", "smtp-password"],
+        imap: ["imap-host", "imap-user", "imap-password"],
+        pop3: ["pop3-host", "pop3-user", "pop3-password"],
+      };
+      const presetPortDefaults = {
+        ssh: "21",
+        ftp: "21",
+        ftps: "990",
+        sftp: "22",
+        smtp: "587",
+        imap: "993",
+        pop3: "995",
+      };
+
+      function updateSecretPresetForm() {
+        if (!secretPreset) {
+          return;
+        }
+        const selected = secretPreset.value || "";
+        const activeRequired = new Set(presetRequiredMap[selected] || []);
+        for (const group of secretPresetGroups) {
+          const mode = group.getAttribute("data-secret-preset");
+          const isActive = selected && mode === selected;
+          group.hidden = !isActive;
+          const fields = group.querySelectorAll("input, select, textarea");
+          fields.forEach((field) => {
+            const id = field.getAttribute("id") || "";
+            field.required = isActive && activeRequired.has(id);
+          });
+        }
+        const portDefault = presetPortDefaults[selected];
+        if (portDefault) {
+          const portInput = document.getElementById(`${selected}-port`);
+          if (portInput && !portInput.value.trim()) {
+            portInput.value = portDefault;
+          }
+        }
+        syncHiddenFields(selected);
+      }
+
+      const finalKeyInput = document.getElementById("secret-key");
+      const finalValueInput = document.getElementById("secret-value-hidden");
+      const customKeyInput = document.getElementById("custom-key");
+      const customValueInput = document.getElementById("custom-value");
+
+      const presetKeyMap = {
+        custom: "",
+        ssh: "SSH_PASSWORD",
+        account: "ACCOUNT_PASSWORD",
+        email: "EMAIL",
+        api: "API_KEY",
+        db: "DB_PASSWORD",
+        oauth: "OAUTH_TOKEN",
+        tls: "TLS_CERTIFICATE",
+        webhook: "WEBHOOK_SECRET",
+        ftp: "FTP_PASSWORD",
+        ftps: "FTPS_PASSWORD",
+        sftp: "SFTP_PASSWORD",
+        smtp: "SMTP_PASSWORD",
+        imap: "IMAP_PASSWORD",
+        pop3: "POP3_PASSWORD",
+      };
+
+      const presetValueFields = {
+        email: ["email-value"],
+        ssh: ["ssh-user", "ssh-host", "ssh-port", "ssh-password"],
+        account: ["account-login", "account-password"],
+        api: ["api-platform", "api-key", "api-base-url", "api-auth-type"],
+        db: ["db-host", "db-port", "db-user", "db-password", "db-name", "db-driver"],
+        oauth: ["oauth-client-id", "oauth-client-secret", "oauth-redirect", "oauth-scope"],
+        tls: ["tls-cert", "tls-key", "tls-passphrase"],
+        webhook: ["webhook-url", "webhook-secret", "webhook-method"],
+        ftp: ["ftp-host", "ftp-port", "ftp-user", "ftp-password"],
+        ftps: ["ftps-host", "ftps-port", "ftps-user", "ftps-password"],
+        sftp: ["sftp-host", "sftp-port", "sftp-user", "sftp-password"],
+        smtp: ["smtp-host", "smtp-port", "smtp-user", "smtp-password"],
+        imap: ["imap-host", "imap-port", "imap-user", "imap-password"],
+        pop3: ["pop3-host", "pop3-port", "pop3-user", "pop3-password"],
+      };
+
+      function buildPresetValue(preset) {
+        const fields = presetValueFields[preset];
+        if (!fields) {
+          return "";
+        }
+        const values = [];
+        for (const id of fields) {
+          const element = document.getElementById(id);
+          if (!element) {
+            continue;
+          }
+          const value = (element.value || "").toString().trim();
+          if (!value) {
+            continue;
+          }
+          values.push(value);
+        }
+        return values.join(" | ");
+      }
+
+      function syncHiddenFields(selectedPreset) {
+        const preset = selectedPreset || (secretPreset ? secretPreset.value : "") || "";
+        if (preset === "custom") {
+          if (customKeyInput && finalKeyInput) {
+            finalKeyInput.value = (customKeyInput.value || "").trim().toUpperCase();
+          }
+          if (customValueInput && finalValueInput) {
+            finalValueInput.value = customValueInput.value;
+          }
+        } else {
+          if (finalKeyInput) {
+            finalKeyInput.value = presetKeyMap[preset] || "";
+          }
+          if (finalValueInput) {
+            finalValueInput.value = buildPresetValue(preset);
+          }
+        }
+      }
+
+      if (customKeyInput) {
+        customKeyInput.addEventListener("input", () => syncHiddenFields("custom"));
+      }
+      if (customValueInput) {
+        customValueInput.addEventListener("input", () => syncHiddenFields("custom"));
+      }
+
+      if (secretPreset) {
+        secretPreset.addEventListener("change", updateSecretPresetForm);
+        updateSecretPresetForm();
+      }
+
+      const presetFieldIds = [];
+      for (const fields of Object.values(presetValueFields)) {
+        for (const fieldId of fields) {
+          if (!presetFieldIds.includes(fieldId)) {
+            presetFieldIds.push(fieldId);
+          }
+        }
+      }
+      for (const fieldId of presetFieldIds) {
+        const el = document.getElementById(fieldId);
+        if (!el) {
+          continue;
+        }
+        el.addEventListener("input", () => syncHiddenFields(secretPreset ? secretPreset.value : ""));
+      }
+
+      const secretsTable = document.getElementById("secrets-table");
+      const secretFormElement = document.getElementById("secret-form");
+      const secretDescriptionInput = document.querySelector("#secret-form input[name='description']");
+      const presetSelect = secretPreset;
+      const projectName = {{ selected_project|default('')|tojson }};
+      const secretCache = new Map();
+
+      async function fetchSecretValue(key) {
+        if (!projectName) {
+          throw new Error("Project not selected.");
+        }
+        if (secretCache.has(key)) {
+          return secretCache.get(key);
+        }
+        const response = await fetch(`/projects/${encodeURIComponent(projectName)}/secrets/${encodeURIComponent(key)}/value`, { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || "Unable to load secret value.");
+        }
+        secretCache.set(key, payload);
+        return payload;
+      }
+
+      if (secretsTable) {
+        secretsTable.addEventListener("click", async (event) => {
+          const button = event.target.closest("[data-edit-secret]");
+          if (!button) {
+            return;
+          }
+          event.preventDefault();
+          const key = button.getAttribute("data-edit-secret");
+          if (!key) {
+            return;
+          }
+          try {
+            const payload = await fetchSecretValue(key);
+        if (customKeyInput) {
+          customKeyInput.value = key;
+        }
+        if (finalKeyInput) {
+          finalKeyInput.value = key;
+        }
+        if (customValueInput) {
+          customValueInput.value = payload.value ?? "";
+        }
+        if (finalValueInput) {
+          finalValueInput.value = payload.value ?? "";
+        }
+        if (secretDescriptionInput) {
+          secretDescriptionInput.value = payload.description ?? "";
+        }
+            if (secretFormElement) {
+              secretFormElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+            if (presetSelect) {
+              presetSelect.value = "custom";
+              updateSecretPresetForm();
+            }
+            if (customValueInput) {
+              customValueInput.focus();
+            }
+          } catch (error) {
+            window.alert(error.message);
+          }
+      });
+    }
+  </script>
   </body>
 </html>

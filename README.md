@@ -8,7 +8,8 @@ Local encrypted vault + web panel + MCP server for AI agent workflows.
 - local web panel (`127.0.0.1:18001`)
 - MCP server:
   - stdio
-  - streamable HTTP (`127.0.0.1:18002`)
+  - SSE (`127.0.0.1:18002/sse`) for Claude Code
+  - streamable HTTP (`127.0.0.1:18003/mcp`) for Codex
 - EN/RU UI and CLI
 - first-run web setup:
   - set your own password
@@ -18,7 +19,14 @@ Local encrypted vault + web panel + MCP server for AI agent workflows.
 - audit log, backup/restore, key rotation
 - Linux hardened system services (`zocketd`)
 
-## Install
+## Install (instant)
+
+```bash
+npm i -g @zocket/cli
+zocket setup
+```
+
+## Install (dev)
 
 ### Python
 ```bash
@@ -42,7 +50,8 @@ zocket setup
 ```bash
 zocket init
 zocket web --host 127.0.0.1 --port 18001
-zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18002
+zocket mcp --transport sse --mode metadata --host 127.0.0.1 --port 18002
+zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18003
 ```
 
 Open `http://127.0.0.1:18001`.
@@ -50,7 +59,7 @@ Open `http://127.0.0.1:18001`.
 ## Docs
 
 - installation (Windows/Linux/macOS): [`docs/INSTALL.md`](docs/INSTALL.md)
-- MCP clients (OpenCode/Claude/Codex/Qwen/Windsurf/Antigravity): [`docs/CLIENTS_MCP.md`](docs/CLIENTS_MCP.md)
+- MCP clients (Codex/Claude Code): [`docs/CLIENTS_MCP.md`](docs/CLIENTS_MCP.md)
 - local models (Ollama/Hugging Face): [`docs/LOCAL_MODELS.md`](docs/LOCAL_MODELS.md)
 - AI one-file auto-deploy playbook: [`docs/AI_AUTODEPLOY.md`](docs/AI_AUTODEPLOY.md)
 - git + npm + pypi release flow: [`docs/GIT_NPM_RELEASE.md`](docs/GIT_NPM_RELEASE.md)

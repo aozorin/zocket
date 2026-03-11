@@ -15,8 +15,15 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "web_password_hash": "",
     "web_password_salt": "",
     "web_password_iterations": 390000,
+    "theme": "standard",
+    "theme_variant": "dark",
     "session_secret": "",
     "audit_enabled": True,
+    "exec_allowlist": [],
+    "exec_return_output": True,
+    "exec_max_output_chars": 4000,
+    "exec_allow_full_output": False,
+    "exec_substitute_env": True,
 }
 
 

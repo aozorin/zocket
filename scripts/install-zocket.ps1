@@ -9,6 +9,7 @@ Param(
   [string]$Lang = "en",
   [int]$WebPort = 18001,
   [int]$McpPort = 18002,
+  [int]$McpStreamPort = 18003,
   [ValidateSet("metadata", "admin")]
   [string]$McpMode = "metadata",
   [switch]$EnableAutostart
@@ -94,13 +95,16 @@ Run-Step $zocketExe @("config", "set-language", $Lang)
 
 if ($EnableAutostart) {
   $webTask = "ZocketWeb"
-  $mcpTask = "ZocketMcpHttp"
+  $mcpSseTask = "ZocketMcpSse"
+  $mcpStreamTask = "ZocketMcpStreamable"
 
   $webCmd = "`"$venvPy`" -m zocket web --host 127.0.0.1 --port $WebPort"
-  $mcpCmd = "`"$venvPy`" -m zocket mcp --transport streamable-http --mode $McpMode --host 127.0.0.1 --port $McpPort"
+  $mcpSseCmd = "`"$venvPy`" -m zocket mcp --transport sse --mode $McpMode --host 127.0.0.1 --port $McpPort"
+  $mcpStreamCmd = "`"$venvPy`" -m zocket mcp --transport streamable-http --mode $McpMode --host 127.0.0.1 --port $McpStreamPort"
 
   schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $webTask /TR $webCmd | Out-Null
-  schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $mcpTask /TR $mcpCmd | Out-Null
+  schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $mcpSseTask /TR $mcpSseCmd | Out-Null
+  schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $mcpStreamTask /TR $mcpStreamCmd | Out-Null
 }
 
 Write-Output "zocket installed successfully."
@@ -108,4 +112,5 @@ Write-Output "venv: $venvDir"
 Write-Output "zocket: $zocketExe"
 Write-Output "ZOCKET_HOME=$ZocketHome"
 Write-Output "web panel: http://127.0.0.1:$WebPort"
-Write-Output "mcp http:  http://127.0.0.1:$McpPort"
+Write-Output "mcp sse:   http://127.0.0.1:$McpPort/sse"
+Write-Output "mcp http:  http://127.0.0.1:$McpStreamPort/mcp"

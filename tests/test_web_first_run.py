@@ -22,11 +22,11 @@ def _app(tmp_path: Path):
     audit = AuditLogger(audit_file)
     app = create_web_app(vault=vault, cfg_store=cfg_store, audit=audit)
     app.config["TESTING"] = True
-    return app, cfg_store
+    return app, cfg_store, vault
 
 
 def test_first_run_set_password(tmp_path: Path):
-    app, cfg_store = _app(tmp_path)
+    app, cfg_store, _ = _app(tmp_path)
     client = app.test_client()
 
     response = client.post(
@@ -46,7 +46,7 @@ def test_first_run_set_password(tmp_path: Path):
 
 
 def test_first_run_no_password_requires_confirmation(tmp_path: Path):
-    app, cfg_store = _app(tmp_path)
+    app, cfg_store, _ = _app(tmp_path)
     client = app.test_client()
 
     response = client.post(
@@ -61,7 +61,7 @@ def test_first_run_no_password_requires_confirmation(tmp_path: Path):
 
 
 def test_first_run_no_password_with_confirmation(tmp_path: Path):
-    app, cfg_store = _app(tmp_path)
+    app, cfg_store, _ = _app(tmp_path)
     client = app.test_client()
 
     response = client.post(
@@ -73,3 +73,26 @@ def test_first_run_no_password_with_confirmation(tmp_path: Path):
     cfg = cfg_store.load()
     assert cfg["web_auth_enabled"] is False
     assert cfg["web_password_hash"] == ""
+
+
+def test_secret_value_endpoint_returns_secret(tmp_path: Path):
+    app, cfg_store, vault = _app(tmp_path)
+    client = app.test_client()
+
+    cfg = cfg_store.load()
+    cfg["web_auth_enabled"] = False
+    cfg_store.save(cfg)
+
+    vault.create_project("home")
+    vault.upsert_secret(
+        project="home",
+        key="SSH_PASSWORD",
+        value="secret-token",
+        description="ssh access",
+    )
+
+    response = client.get("/projects/home/secrets/SSH_PASSWORD/value")
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["ok"] is True
+    assert payload["value"] == "secret-token"

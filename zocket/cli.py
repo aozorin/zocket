@@ -36,7 +36,7 @@ from .paths import (
     lock_path,
     vault_path,
 )
-from .runner import run_with_env
+from .runner import ExecPolicyError, run_with_env, run_with_env_limited
 from .vault import ProjectNotFoundError, VaultError, empty_vault, VaultService
 from .web import create_web_app
 
@@ -128,6 +128,8 @@ def parser() -> argparse.ArgumentParser:
 
     use_p = sub.add_parser("use", help="Run command with project env")
     use_p.add_argument("project")
+    use_p.add_argument("--full-output", action="store_true")
+    use_p.add_argument("--no-subst", action="store_true")
     use_p.add_argument("exec_command", nargs=argparse.REMAINDER)
 
     auto_p = sub.add_parser("autostart", help="Manage OS autostart services")
@@ -366,7 +368,34 @@ def cmd_use(args: argparse.Namespace, ctx: AppContext) -> int:
         print(t(ctx, "err.usage_use"), file=sys.stderr)
         return 2
     env = ctx.vault.get_project_env(args.project)
-    result = run_with_env(command=command, project_env=env)
+    cfg = ctx.cfg_store.load()
+    allowlist = cfg.get("exec_allowlist") or []
+    return_output = bool(cfg.get("exec_return_output", True))
+    allow_full_output = bool(cfg.get("exec_allow_full_output", False))
+    substitute_env = bool(cfg.get("exec_substitute_env", True))
+    if args.no_subst:
+        substitute_env = False
+    try:
+        max_output = int(cfg.get("exec_max_output_chars", 0))
+    except (TypeError, ValueError):
+        max_output = 0
+    if not return_output:
+        max_output = 0
+    if args.full_output and not allow_full_output:
+        print("Full output is not allowed by policy.", file=sys.stderr)
+        return 3
+    output_limit = None if args.full_output else max_output
+    try:
+        result = run_with_env_limited(
+            command=command,
+            project_env=env,
+            allowlist=allowlist,
+            max_output_chars=output_limit,
+            substitute_env=substitute_env,
+        )
+    except ExecPolicyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 3
     if result.stdout:
         print(result.stdout, end="")
     if result.stderr:

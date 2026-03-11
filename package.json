@@ -38,10 +38,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/zocket.git"
+    "url": "https://github.com/aozorin/zocket.git"
   },
-  "homepage": "https://github.com/your-org/zocket#readme",
+  "homepage": "https://github.com/aozorin/zocket#readme",
   "bugs": {
-    "url": "https://github.com/your-org/zocket/issues"
+    "url": "https://github.com/aozorin/zocket/issues"
   }
 }

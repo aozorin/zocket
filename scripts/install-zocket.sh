@@ -12,6 +12,7 @@ ZOCKET_HOME_DIR="${ZOCKET_HOME_DIR:-$HOME/.zocket}"
 LANGUAGE="${LANGUAGE:-en}"                 # en|ru
 WEB_PORT="${WEB_PORT:-18001}"
 MCP_PORT="${MCP_PORT:-18002}"
+MCP_STREAM_PORT="${MCP_STREAM_PORT:-18003}"
 MCP_MODE="${MCP_MODE:-metadata}"           # metadata|admin
 AUTOSTART="${AUTOSTART:-user}"             # user|system|none
 SERVICE_USER="${SERVICE_USER:-zocketd}"
@@ -29,6 +30,7 @@ Options:
   --lang <en|ru>
   --web-port <port>
   --mcp-port <port>
+  --mcp-stream-port <port>
   --mcp-mode <metadata|admin>
   --autostart <user|system|none>
   --service-user <name>
@@ -48,6 +50,7 @@ while [[ $# -gt 0 ]]; do
     --lang) LANGUAGE="$2"; shift 2 ;;
     --web-port) WEB_PORT="$2"; shift 2 ;;
     --mcp-port) MCP_PORT="$2"; shift 2 ;;
+    --mcp-stream-port) MCP_STREAM_PORT="$2"; shift 2 ;;
     --mcp-mode) MCP_MODE="$2"; shift 2 ;;
     --autostart) AUTOSTART="$2"; shift 2 ;;
     --service-user) SERVICE_USER="$2"; shift 2 ;;
@@ -214,10 +217,12 @@ Runtime:
 
 Default ports:
   web panel: http://127.0.0.1:${WEB_PORT}
-  MCP HTTP:  http://127.0.0.1:${MCP_PORT}
+  MCP SSE:   http://127.0.0.1:${MCP_PORT}/sse
+  MCP HTTP:  http://127.0.0.1:${MCP_STREAM_PORT}/mcp
 
 Next steps:
   1) Open web: ${ZOCKET_BIN} web --host 127.0.0.1 --port ${WEB_PORT}
-  2) MCP HTTP: ${ZOCKET_BIN} mcp --transport streamable-http --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_PORT}
-  3) MCP stdio: ${ZOCKET_BIN} mcp --transport stdio --mode ${MCP_MODE}
+  2) MCP SSE (Claude Code): ${ZOCKET_BIN} mcp --transport sse --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_PORT}
+  3) MCP Streamable (Codex): ${ZOCKET_BIN} mcp --transport streamable-http --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_STREAM_PORT}
+  4) MCP stdio: ${ZOCKET_BIN} mcp --transport stdio --mode ${MCP_MODE}
 EOF

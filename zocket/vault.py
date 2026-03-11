@@ -246,6 +246,17 @@ class VaultService:
             info["updated_at"] = utc_now_iso()
             self._write_unlocked(payload)
 
+    def get_secret(self, project: str, key: str) -> dict[str, str]:
+        self._validate_project_name(project)
+        self._validate_secret_key(key)
+        with self._locked():
+            payload = self._read_unlocked()
+        info = self._get_project(payload, project)
+        secret = info.get("secrets", {}).get(key)
+        if secret is None:
+            raise SecretNotFoundError(f"Secret {key} not found in project {project}")
+        return dict(secret)
+
     def delete_project(self, project: str) -> None:
         self._validate_project_name(project)
         with self._locked():
