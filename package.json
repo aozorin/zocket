@@ -1,5 +1,5 @@
 {
-  "name": "@zocket/cli",
+  "name": "@aozorin/zocket",
   "version": "1.0.0",
   "description": "Cross-platform npm launcher for Zocket (local MCP + web vault)",
   "license": "MIT",
@@ -11,8 +11,13 @@
   },
   "files": [
     "bin/",
-    "docs/",
-    "scripts/",
+    "docs/AI_AUTODEPLOY.md",
+    "docs/CLIENTS_MCP.md",
+    "docs/INSTALL.md",
+    "docs/LOCAL_MODELS.md",
+    "scripts/ai-autodeploy.py",
+    "scripts/install-zocket.sh",
+    "scripts/install-zocket.ps1",
     "zocket/*.py",
     "zocket/templates/*.html",
     "pyproject.toml",

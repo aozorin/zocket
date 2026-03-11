@@ -5,3 +5,4 @@ build/
 dist/
 *.egg-info/
 UNKNOWN.egg-info/
+docs/RELEASE_1_0_0.md
