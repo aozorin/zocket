@@ -38,7 +38,7 @@ Three interfaces share one VaultService core. All interfaces run as subcommands 
 src/
   index.ts          # bin entry point (shebang, Commander root)
   cli.ts            # all CLI commands
-  vault.ts          # VaultService — project/secret CRUD, file locking
+  vault.ts          # VaultService — project/secret CRUD, file locking via proper-lockfile
   crypto.ts         # AES-256-GCM, key management, key storage backends
   web.ts            # Hono app + all routes
   mcp.ts            # MCP server (stdio / SSE / streamable-HTTP)
@@ -58,12 +58,13 @@ src/
 
 ## Dependencies
 
-### Runtime (3 packages)
+### Runtime (4 packages)
 | Package | Purpose |
 |---|---|
 | `hono` | Web framework + JSX server-side rendering |
 | `commander` | CLI subcommands and option parsing |
 | `@modelcontextprotocol/sdk` | MCP server (stdio, SSE, streamable-HTTP) |
+| `proper-lockfile` | Cross-platform file locking for concurrent vault access |
 
 ### Optional peer dependency
 | Package | Purpose |
@@ -88,19 +89,27 @@ src/
 | Password hashing | PBKDF2-SHA256, 390k iterations | PBKDF2-SHA256, 600k iterations (OWASP 2024) |
 | Key storage | `keyring` library | `keytar` peer dep + file + env var |
 
-**Vault binary format:** `[4B version][12B IV][16B auth tag][NB ciphertext]`
+**Vault binary format** (raw binary, no base64):
+```
+[4B version, big-endian uint32][12B IV][16B GCM auth tag][NB raw ciphertext]
+```
+Version field = `1` for this format. Backup files use `.enc` extension.
 
 Key storage priority (highest first):
 1. `ZOCKET_MASTER_KEY` env var
 2. OS keyring via `keytar` (if installed)
 3. File: `~/.zocket/master.key`
 
+**keytar fallback:** if `key_storage` config is `"keyring"` but `keytar` is not installed, `load_key()` throws a user-facing error: `"keytar not installed — run: npm i -g keytar"`. Key rotation (`zocket key rotate`) must validate the target storage backend is available before rotating.
+
 ## Web Panel
 
 - **Hono JSX** replaces Jinja2 templates — TypeScript-native, no extra dep
 - Same routes as Python version (~10 routes)
 - Same features: login, first-run setup, project/secret CRUD, folder picker, themes (standard/zorin, light/dark), language switcher
-- Session: in-memory Map with signed cookie (Hono built-in)
+- **Session:** in-memory `Map<string, SessionData>` with random session ID stored in signed cookie via `hono/cookie` (`setCookie` + `getCookie`). Session secret generated once at init and persisted in `config.json` as `session_secret`. Restart-safe.
+- **Folder picker security:** browsing constrained to allowlist `folder_picker_roots` (default: `["/home", "/srv", "/opt", "/var/www", "/var/lib"]`). Path traversal protection: resolve requested path with `path.resolve()` and verify it starts with one of the allowed roots before listing.
+- **`config show` redaction:** `web_password_hash` and `web_password_salt` are redacted from CLI output (shown as `"***"`).
 
 ## MCP Server
 
@@ -118,9 +127,13 @@ Transports: `stdio` (default), `sse` (port 18002), `streamable-http` (port 18003
 
 Same interface as Python version:
 ```
-zocket init
-zocket web [--host] [--port]
-zocket mcp [--transport stdio|sse|streamable-http] [--mode metadata|admin] [--host] [--port]
+zocket init [--force] [--autostart]
+zocket web [--host 127.0.0.1] [--port 18001]
+zocket mcp [--transport stdio|sse|streamable-http] [--mode metadata|admin] [--host 127.0.0.1] [--port 18002]
+```
+MCP port defaults: `--port 18002` for SSE, `--port 18003` for streamable-HTTP (transport-aware default in Commander).
+
+```
 zocket projects <list|create|set-folder|match-path|delete>
 zocket secrets <list|set|delete>
 zocket use <project> -- <command>
@@ -133,17 +146,35 @@ zocket audit <tail|check>
 zocket harden install-linux-system [options]
 ```
 
+## Additional Module Notes
+
+**`audit.ts`** — `AuditLogger` must implement:
+- `log(action, actor, details, status)` — append JSONL entry
+- `tail(n)` — return last N entries
+- `failedLogins(minutes)` — count failed login entries within window (used by `zocket audit check`)
+
+**`harden.ts` / `autostart.ts`** — binary discovery in Node.js context:
+- Use `process.argv[1]` (absolute path to `zocket.js`) for `ExecStart` in systemd units
+- Fallback: `which('zocket')` via Node `child_process.execSync`
+- Systemd unit `ExecStart` uses `node /path/to/zocket.js web ...` form
+
+**`i18n.ts`** — preserve same key names as Python version for consistency. All ~80 existing keys must be ported with identical names.
+
+**`backup.ts`** — backup files named `vault-YYYYMMDDTHHMMSSZ.enc`, list globs `backups/*.enc`.
+
 ## Testing
 
 **Vitest** (native ESM, fast, TypeScript-native):
 
 | File | Coverage |
 |---|---|
-| `tests/vault.test.ts` | CRUD, file locking, folder matching |
-| `tests/crypto.test.ts` | encrypt/decrypt, key rotation, storage backends |
+| `tests/vault.test.ts` | CRUD, concurrent file locking, folder matching |
+| `tests/crypto.test.ts` | encrypt/decrypt, key rotation, keytar fallback error |
 | `tests/mcp.test.ts` | metadata mode tools, admin mode mutations |
-| `tests/web.test.ts` | all routes via Hono test client |
+| `tests/web.test.ts` | all routes via Hono test client, folder picker path traversal |
 | `tests/runner.test.ts` | $VAR substitution, output redaction, exec policy |
+| `tests/harden.test.ts` | systemd unit generation (dry-run), binary path discovery |
+| `tests/autostart.test.ts` | install/remove/status (dry-run) |
 
 ## Release
 
