@@ -1,52 +1,43 @@
 {
   "name": "@ao_zorin/zocket",
   "version": "1.0.0",
-  "description": "Cross-platform npm launcher for Zocket (local MCP + web vault)",
-  "license": "MIT",
-  "private": false,
-  "type": "commonjs",
-  "bin": {
-    "zocket": "bin/zocket.cjs",
-    "zocket-setup": "bin/zocket-setup.cjs"
-  },
-  "files": [
-    "bin/",
-    "docs/AI_AUTODEPLOY.md",
-    "docs/CLIENTS_MCP.md",
-    "docs/INSTALL.md",
-    "docs/LOCAL_MODELS.md",
-    "scripts/ai-autodeploy.py",
-    "scripts/install-zocket.sh",
-    "scripts/install-zocket.ps1",
-    "zocket/*.py",
-    "zocket/templates/*.html",
-    "pyproject.toml",
-    "README.md",
-    "LICENSE"
-  ],
-  "engines": {
-    "node": ">=18"
-  },
+  "description": "Local encrypted vault + web panel + MCP server for AI agent workflows",
+  "type": "module",
+  "bin": { "zocket": "dist/zocket.js" },
   "scripts": {
-    "test:python": "PYTHONPATH=. pytest -q",
-    "smoke:npm": "node ./bin/zocket.cjs --help"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "secrets",
-    "vault",
-    "cli",
-    "agents",
-    "codex",
-    "claude"
-  ],
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "commander": "^12.0.0",
+    "hono": "^4.0.0",
+    "proper-lockfile": "^4.1.2",
+    "zod": "^3.22.0"
+  },
+  "peerDependencies": {
+    "keytar": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "keytar": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/proper-lockfile": "^4.1.4",
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": { "node": ">=18.0.0" },
+  "files": ["dist"],
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aozorin/zocket.git"
-  },
-  "homepage": "https://github.com/aozorin/zocket#readme",
-  "bugs": {
-    "url": "https://github.com/aozorin/zocket/issues"
+    "url": "git+https://github.com/aozorin/zocket.git"
   }
 }

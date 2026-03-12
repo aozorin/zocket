@@ -22,8 +22,8 @@ Local encrypted vault + web panel + MCP server for AI agent workflows.
 ## Install (instant)
 
 ```bash
-npm i -g @zocket/cli
-zocket setup
+npm i -g @ao_zorin/zocket
+zocket init
 ```
 
 ## Install (dev)
@@ -41,8 +41,8 @@ npm run smoke:npm
 
 or global from git:
 ```bash
-npm i -g github:your-org/zocket
-zocket setup
+npm i -g github:aozorin/zocket
+zocket init
 ```
 
 ## Quick start
