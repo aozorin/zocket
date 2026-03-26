@@ -12,7 +12,7 @@ Param(
   [int]$McpStreamPort = 18003,
   [ValidateSet("metadata", "admin")]
   [string]$McpMode = "metadata",
-  [switch]$EnableAutostart
+  [bool]$EnableAutostart = $true
 )
 
 $ErrorActionPreference = "Stop"

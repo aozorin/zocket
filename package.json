@@ -1,9 +1,11 @@
 {
   "name": "@ao_zorin/zocket",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Local encrypted vault + web panel + MCP server for AI agent workflows",
   "type": "module",
-  "bin": { "zocket": "dist/zocket.js" },
+  "bin": {
+    "zocket": "dist/zocket.js"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -13,6 +15,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@hono/node-server": "^1.13.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "commander": "^12.0.0",
@@ -24,17 +27,35 @@
     "keytar": "^7.0.0"
   },
   "peerDependenciesMeta": {
-    "keytar": { "optional": true }
+    "keytar": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4",
     "@types/node": "^20.0.0",
     "@types/proper-lockfile": "^4.1.4",
-    "typescript": "^5.0.0",
+    "js-tiktoken": "^1.0.21",
     "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
     "vitest": "^2.0.0"
   },
-  "engines": { "node": ">=18.0.0" },
-  "files": ["dist"],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs/AI_AUTODEPLOY.md",
+    "docs/CLIENTS_MCP.md",
+    "docs/GIT_NPM_RELEASE.md",
+    "docs/INSTALL.md",
+    "docs/LOCAL_MODELS.md",
+    "docs/SOURCES.md",
+    "scripts/install-zocket.sh",
+    "scripts/install-zocket.ps1"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

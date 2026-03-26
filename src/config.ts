@@ -1,9 +1,12 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { dirname } from 'path'
 import { randomBytes } from 'crypto'
+import type { SecurityMode, RiskLevel } from './security.js'
 
+export type { SecurityMode, RiskLevel }
 export type KeyStorage = 'file' | 'keyring' | 'env'
 export type Lang = 'en' | 'ru'
+export type McpLoading = 'eager' | 'lazy'
 
 export interface Config {
   language: Lang
@@ -20,6 +23,10 @@ export interface Config {
   exec_allow_substitution: boolean
   exec_allow_full_output: boolean
   exec_redact_secrets: boolean
+  security_mode: SecurityMode
+  security_block_threshold: RiskLevel
+  /** Tool registration strategy. eager = all tools at connect; lazy = on-demand via activate_tool. */
+  mcp_loading: McpLoading
 }
 
 const DEFAULTS: Config = {
@@ -33,10 +40,13 @@ const DEFAULTS: Config = {
   session_secret: '',
   folder_picker_roots: ['/home', '/srv', '/opt', '/var/www', '/var/lib'],
   exec_allow_list: null,
-  exec_max_output: 4096,
+  exec_max_output: 500,
   exec_allow_substitution: true,
   exec_allow_full_output: false,
   exec_redact_secrets: true,
+  security_mode: 'enforce' as SecurityMode,
+  security_block_threshold: 'high' as RiskLevel,
+  mcp_loading: 'eager' as McpLoading,
 }
 
 export class ConfigStore {

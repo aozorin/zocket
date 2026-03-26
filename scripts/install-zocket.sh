@@ -109,6 +109,95 @@ install_python_macos() {
   brew install python git curl
 }
 
+write_systemd_unit() {
+  local unit_path="$1"
+  local exec_start="$2"
+  local svc_user="$3"
+  local svc_group="$4"
+  local zocket_home="$5"
+  local extra_rw="${6:-}"
+  run_sudo tee "${unit_path}" >/dev/null <<EOF
+[Unit]
+Description=Zocket $(basename "${unit_path%.service}")
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=${svc_user}
+Group=${svc_group}
+Environment=ZOCKET_HOME=${zocket_home}
+ExecStart=${exec_start}
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectControlGroups=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths=${zocket_home} ${extra_rw}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+write_systemd_user_unit() {
+  local unit_path="$1"
+  local exec_start="$2"
+  local zocket_home="$3"
+  mkdir -p "$(dirname "${unit_path}")"
+  cat > "${unit_path}" <<EOF
+[Unit]
+Description=Zocket $(basename "${unit_path%.service}")
+After=default.target
+
+[Service]
+Type=simple
+Environment=ZOCKET_HOME=${zocket_home}
+ExecStart=${exec_start}
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target
+EOF
+}
+
+install_launchd() {
+  local label="$1"
+  local exec_start="$2"
+  local zocket_home="$3"
+  local plist_dir="$4"
+  mkdir -p "${plist_dir}"
+  cat > "${plist_dir}/${label}.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key><string>${label}</string>
+    <key>ProgramArguments</key>
+    <array>
+EOF
+  for part in ${exec_start}; do
+    echo "      <string>${part}</string>" >> "${plist_dir}/${label}.plist"
+  done
+  cat >> "${plist_dir}/${label}.plist" <<EOF
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>ZOCKET_HOME</key><string>${zocket_home}</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+  </dict>
+</plist>
+EOF
+}
+
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 if ! have_cmd python3; then
   echo "python3 not found, installing dependencies..."
@@ -189,22 +278,51 @@ fi
 "${ZOCKET_BIN}" config set-language "${LANGUAGE}" >/dev/null
 
 if [[ "$AUTOSTART" == "user" && "$OS" == linux* ]]; then
-  "${ZOCKET_BIN}" autostart install \
-    --target both \
-    --web-port "${WEB_PORT}" \
-    --mcp-port "${MCP_PORT}" \
-    --mcp-mode "${MCP_MODE}" \
-    --zocket-home "${ZOCKET_HOME_DIR}" >/dev/null
+  USER_UNIT_DIR="$HOME/.config/systemd/user"
+  write_systemd_user_unit "${USER_UNIT_DIR}/zocket-web.service" \
+    "${PY_BIN} -m zocket web --host 127.0.0.1 --port ${WEB_PORT}" \
+    "${ZOCKET_HOME_DIR}"
+  write_systemd_user_unit "${USER_UNIT_DIR}/zocket-mcp-sse.service" \
+    "${PY_BIN} -m zocket mcp --transport sse --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_PORT}" \
+    "${ZOCKET_HOME_DIR}"
+  write_systemd_user_unit "${USER_UNIT_DIR}/zocket-mcp-http.service" \
+    "${PY_BIN} -m zocket mcp --transport streamable-http --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_STREAM_PORT}" \
+    "${ZOCKET_HOME_DIR}"
+  systemctl --user daemon-reload
+  systemctl --user enable --now zocket-web.service zocket-mcp-sse.service zocket-mcp-http.service >/dev/null
 fi
 
 if [[ "$AUTOSTART" == "system" && "$OS" == linux* ]]; then
-  run_sudo env ZOCKET_HOME="${ZOCKET_HOME_DIR}" "${PY_BIN}" -m zocket harden install-linux-system \
-    --service-user "${SERVICE_USER}" \
-    --zocket-home "${ZOCKET_HOME_DIR}" \
-    --web-port "${WEB_PORT}" \
-    --mcp-host 127.0.0.1 \
-    --mcp-port "${MCP_PORT}" \
-    --mcp-mode "${MCP_MODE}" >/dev/null
+  write_systemd_unit "/etc/systemd/system/zocket-web.service" \
+    "${PY_BIN} -m zocket web --host 127.0.0.1 --port ${WEB_PORT}" \
+    "${SERVICE_USER}" "${SERVICE_USER}" "${ZOCKET_HOME_DIR}" "/tmp"
+  write_systemd_unit "/etc/systemd/system/zocket-mcp-sse.service" \
+    "${PY_BIN} -m zocket mcp --transport sse --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_PORT}" \
+    "${SERVICE_USER}" "${SERVICE_USER}" "${ZOCKET_HOME_DIR}"
+  write_systemd_unit "/etc/systemd/system/zocket-mcp-http.service" \
+    "${PY_BIN} -m zocket mcp --transport streamable-http --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_STREAM_PORT}" \
+    "${SERVICE_USER}" "${SERVICE_USER}" "${ZOCKET_HOME_DIR}"
+  run_sudo systemctl daemon-reload
+  run_sudo systemctl enable --now zocket-web.service zocket-mcp-sse.service zocket-mcp-http.service >/dev/null
+fi
+
+if [[ "$AUTOSTART" != "none" && "$OS" == darwin* ]]; then
+  PLIST_DIR="$HOME/Library/LaunchAgents"
+  install_launchd "dev.zocket.web" \
+    "${PY_BIN} -m zocket web --host 127.0.0.1 --port ${WEB_PORT}" \
+    "${ZOCKET_HOME_DIR}" "${PLIST_DIR}"
+  install_launchd "dev.zocket.mcp-sse" \
+    "${PY_BIN} -m zocket mcp --transport sse --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_PORT}" \
+    "${ZOCKET_HOME_DIR}" "${PLIST_DIR}"
+  install_launchd "dev.zocket.mcp-streamable" \
+    "${PY_BIN} -m zocket mcp --transport streamable-http --mode ${MCP_MODE} --host 127.0.0.1 --port ${MCP_STREAM_PORT}" \
+    "${ZOCKET_HOME_DIR}" "${PLIST_DIR}"
+  launchctl unload "${PLIST_DIR}/dev.zocket.web.plist" >/dev/null 2>&1 || true
+  launchctl unload "${PLIST_DIR}/dev.zocket.mcp-sse.plist" >/dev/null 2>&1 || true
+  launchctl unload "${PLIST_DIR}/dev.zocket.mcp-streamable.plist" >/dev/null 2>&1 || true
+  launchctl load "${PLIST_DIR}/dev.zocket.web.plist"
+  launchctl load "${PLIST_DIR}/dev.zocket.mcp-sse.plist"
+  launchctl load "${PLIST_DIR}/dev.zocket.mcp-streamable.plist"
 fi
 
 cat <<EOF

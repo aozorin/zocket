@@ -1,0 +1,103 @@
+# SECTION: Detection Matrix
+id,category,scenario,type,mode,expected_allowed,actual_allowed,risk,score,rules,pass,failures
+L01,Legitimate,"curl Bearer header single key",command,enforce,true,true,none,0,"SINGLE_ENV_NETWORK",true,""
+L02,Legitimate,"curl POST single secret in body",command,enforce,true,true,none,0,"SINGLE_ENV_NETWORK",true,""
+L03,Legitimate,"node fetch Authorization Bearer",script,enforce,true,true,none,0,"",true,""
+L04,Legitimate,"python requests Authorization Bearer",script,enforce,true,true,none,0,"",true,""
+L05,Legitimate,"clean ls command",command,enforce,true,true,none,0,"",true,""
+L06,Legitimate,"curl HTTPS static domain single key",command,enforce,true,true,none,0,"SINGLE_ENV_NETWORK",true,""
+L07,Legitimate,"node axios single env var",script,enforce,true,true,none,0,"",true,""
+C01,Critical,"printenv piped to curl",command,enforce,false,false,critical,20,"ENV_DUMP_PIPE_NETWORK",true,""
+C02,Critical,"env piped to wget",command,enforce,false,false,critical,20,"ENV_DUMP_PIPE_NETWORK",true,""
+C03,Critical,"/proc/<pid>/environ read",command,enforce,false,false,critical,20,"PROC_ENVIRON_READ",true,""
+C04,Critical,"two secrets in query string",command,enforce,false,false,critical,20,"MULTI_SECRET_IN_URL",true,""
+C05,Critical,"two secrets in URL path",command,enforce,false,false,critical,20,"MULTI_SECRET_IN_URL",true,""
+C06,Critical,"bash loop printenv + curl",command,enforce,false,false,critical,30,"LOOP_ENV_EXFIL;ENV_DUMP_SUBSHELL",true,""
+C07,Critical,"node Object.entries(process.env) + fetch",script,enforce,false,false,critical,25,"LOOP_ENV_EXFIL;SCRIPT_ENUMERATE_ALL_ENV",true,""
+C08,Critical,"python loop os.environ.items() + requests",script,enforce,false,false,critical,25,"LOOP_ENV_EXFIL;SCRIPT_ENUMERATE_ALL_ENV",true,""
+H01,High,"node base64 encoding + fetch",script,enforce,false,false,high,10,"ENCODE_PIPE_NETWORK",true,""
+H02,High,"bash base64 pipe curl",command,enforce,false,false,high,10,"ENCODE_PIPE_NETWORK",true,""
+H03,High,"/etc/shadow + requests.post",script,enforce,false,false,high,10,"SENSITIVE_FILE_EXFIL",true,""
+H04,High,"~/.ssh/id_rsa curled",command,enforce,false,false,high,10,"SENSITIVE_FILE_EXFIL",true,""
+H05,High,"ENV_DUMP_SUBSHELL in curl -d",command,enforce,false,false,high,10,"ENV_DUMP_SUBSHELL",true,""
+M01,Medium,"printenv > file redirect",command,enforce,true,true,medium,5,"REDIRECT_ENV_TO_FILE",true,""
+M02,Medium,"two secrets + network (not in URL)",command,enforce,true,true,medium,6,"MULTIPLE_SECRETS_ARGS;SINGLE_ENV_NETWORK",true,""
+M03,Medium,"python subprocess curl",script,enforce,true,true,low,4,"PYTHON_SUBPROCESS_EXFIL",true,""
+M04,Medium,"bare printenv alone",command,enforce,true,true,medium,5,"BARE_ENV_DUMP",true,""
+A01,Audit,"critical command allowed in audit mode",command,audit,true,true,critical,20,"ENV_DUMP_PIPE_NETWORK",true,""
+O01,Off,"any command allowed in off mode",command,off,true,true,none,0,"",true,""
+S01,Supersession,"ENV_DUMP_PIPE_NETWORK supersedes BARE_ENV_DUMP",command,enforce,false,false,critical,20,"ENV_DUMP_PIPE_NETWORK",true,""
+S02,Supersession,"MULTI_SECRET_IN_URL supersedes MULTIPLE_SECRETS_ARGS",command,enforce,false,false,critical,20,"MULTI_SECRET_IN_URL",true,""
+D01,Domain Allowlist,"known domain in allowlist — allowed",command,enforce,true,true,none,0,"SINGLE_ENV_NETWORK",true,""
+D02,Domain Allowlist,"unknown domain — blocked",command,enforce,false,false,high,12,"UNKNOWN_DOMAIN;SINGLE_ENV_NETWORK",true,""
+SD01,Suspicious Domain,"Stripe key to correct domain — no SUSPICIOUS_DOMAIN",command,enforce,true,true,none,0,"SINGLE_ENV_NETWORK",true,""
+SD02,Suspicious Domain,"Stripe key to attacker.com — SUSPICIOUS_DOMAIN fires",command,enforce,true,true,medium,5,"SUSPICIOUS_DOMAIN",true,""
+SD03,Suspicious Domain,"Private API zorin.pw — no false positive",command,enforce,true,true,none,0,"SINGLE_ENV_NETWORK",true,""
+SD04,Suspicious Domain,"Pexels key to wrong domain — SUSPICIOUS_DOMAIN fires",command,enforce,true,true,medium,5,"SUSPICIOUS_DOMAIN",true,""
+SD05,Suspicious Domain,"No hints — SUSPICIOUS_DOMAIN disabled",command,enforce,true,true,none,0,"SINGLE_ENV_NETWORK",true,""
+
+# SECTION: Performance
+operation,ops_per_sec,ns_per_op
+"analyzeCommand — clean (ls -la)",307809,3249
+"analyzeCommand — legitimate curl Bearer",210832,4743
+"analyzeCommand — ENV_DUMP_PIPE_NETWORK (critical)",237523,4210
+"analyzeCommand — MULTI_SECRET_IN_URL (critical)",218151,4584
+"analyzeScript node — clean fetch",223124,4482
+"analyzeScript node — Object.entries exfil",204471,4891
+"analyzeScript python — loop os.environ + requests",209709,4769
+"checkDomainMatch — known API hit (Stripe)",953599,1049
+"checkDomainMatch — known API miss (Stripe→evil)",798192,1253
+"checkDomainMatch — unknown private API",160864,6216
+"extractHints — typical project+keys",1533023,652
+
+# SECTION: Rule Firing Frequency
+rule,count,frequency_pct
+SINGLE_ENV_NETWORK,9,25.7
+ENV_DUMP_PIPE_NETWORK,4,11.4
+MULTI_SECRET_IN_URL,3,8.6
+LOOP_ENV_EXFIL,3,8.6
+ENV_DUMP_SUBSHELL,2,5.7
+SCRIPT_ENUMERATE_ALL_ENV,2,5.7
+ENCODE_PIPE_NETWORK,2,5.7
+SENSITIVE_FILE_EXFIL,2,5.7
+SUSPICIOUS_DOMAIN,2,5.7
+PROC_ENVIRON_READ,1,2.9
+REDIRECT_ENV_TO_FILE,1,2.9
+MULTIPLE_SECRETS_ARGS,1,2.9
+PYTHON_SUBPROCESS_EXFIL,1,2.9
+BARE_ENV_DUMP,1,2.9
+UNKNOWN_DOMAIN,1,2.9
+
+# SECTION: API Registry
+category,providers,domains,keywords
+"Stock / Media",6,8,6
+"AI / LLM",11,13,18
+"Payment",8,16,9
+"Cloud / Infrastructure",9,16,16
+"Communication",10,15,12
+"Auth / Identity",6,11,7
+"Dev Tools",8,11,12
+"Data / Analytics",9,12,11
+"Maps / Location",4,5,8
+"E-commerce",3,5,5
+
+# SECTION: Domain Matching
+label,expected,result,pass
+"Stripe → api.stripe.com (correct)",ok,ok,true
+"Stripe → attacker.com (mismatch)",MISMATCH,MISMATCH,true
+"Stripe → checkout.stripe.com (subdomain ok)",ok,ok,true
+"OpenAI → api.openai.com (correct)",ok,ok,true
+"OpenAI → evil.io (mismatch)",MISMATCH,MISMATCH,true
+"Pexels → api.pexels.com (correct)",ok,ok,true
+"Pexels → really-safety.com (mismatch)",MISMATCH,MISMATCH,true
+"Telegram → api.telegram.org (correct)",ok,ok,true
+"GitHub → api.github.com (correct)",ok,ok,true
+"GitHub → github.com (alternate correct)",ok,ok,true
+"Private API zorin.pw (no false positive)",no-match,no-match,true
+"Generic key + unknown domain (no FP)",no-match,no-match,true
+"AWS → amazonaws.com (correct)",ok,ok,true
+"AWS → s3.amazonaws.com (subdomain ok)",ok,ok,true
+"AWS key → fake subdomain spoofing (mismatch)",MISMATCH,MISMATCH,true
+"Stripe key → stripe domain spoofing (mismatch)",MISMATCH,MISMATCH,true
+"Anthropic → api.anthropic.com (correct)",ok,ok,true
+"Discord → discord.com (correct)",ok,ok,true

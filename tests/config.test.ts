@@ -14,7 +14,10 @@ describe('ConfigStore', () => {
     const cfg = store.load()
     expect(cfg.language).toBe('en')
     expect(cfg.web_auth_enabled).toBe(false)
-    expect(cfg.exec_max_output).toBe(4096)
+    expect(cfg.exec_max_output).toBe(500)
+    expect(cfg.mcp_loading).toBe('eager')
+    expect(cfg.security_mode).toBe('enforce')
+    expect(cfg.security_block_threshold).toBe('high')
   })
 
   it('persists and reloads values', async () => {

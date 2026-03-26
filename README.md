@@ -26,19 +26,6 @@ npm i -g @ao_zorin/zocket
 zocket init
 ```
 
-## Install (dev)
-
-### Python
-```bash
-pip install -e .
-```
-
-### npm wrapper
-```bash
-npm install
-npm run smoke:npm
-```
-
 or global from git:
 ```bash
 npm i -g github:aozorin/zocket
@@ -49,12 +36,19 @@ zocket init
 
 ```bash
 zocket init
-zocket web --host 127.0.0.1 --port 18001
-zocket mcp --transport sse --mode metadata --host 127.0.0.1 --port 18002
-zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18003
+zocket start --host 127.0.0.1 --web-port 18001 --mcp-port 18002 --mode admin
 ```
 
 Open `http://127.0.0.1:18001`.
+
+## Codex (streamable HTTP)
+
+Codex requires streamable HTTP on `127.0.0.1:18003/mcp`. The Node CLI does **SSE only** today.
+Until streamable HTTP is implemented in Node, run the companion Python service (separate package):
+
+```bash
+python3 -m zocket mcp --transport streamable-http --mode admin --host 127.0.0.1 --port 18003
+```
 
 ## Docs
 
@@ -83,8 +77,9 @@ Open `http://127.0.0.1:18001`.
 ## Development
 
 ```bash
-PYTHONPATH=. pytest -q
-bash scripts/release-check.sh
+npm install
+npm run build
+npm test
 ```
 
 ## License

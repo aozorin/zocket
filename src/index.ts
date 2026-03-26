@@ -1,2 +1,6 @@
-// Entry point — wired up in Task 15
-console.log('zocket v1.0.0')
+import { buildCli } from './cli.js'
+
+buildCli().parseAsync(process.argv).catch(e => {
+  console.error(e)
+  process.exit(1)
+})

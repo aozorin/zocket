@@ -70,14 +70,20 @@ Requirements:
 - Python 3.10+ (recommended from `python.org` or `winget`)
 - Git for Windows
 
-Optional autostart:
+Autostart (enabled by default):
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-zocket.ps1 -EnableAutostart
+powershell -ExecutionPolicy Bypass -File .\scripts\install-zocket.ps1
 ```
 
 This creates scheduled tasks:
 - `ZocketWeb`
-- `ZocketMcpHttp`
+- `ZocketMcpSse`
+- `ZocketMcpStreamable`
+
+Disable autostart:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-zocket.ps1 -EnableAutostart:$false
+```
 
 ## 5) NPM package usage
 
@@ -109,70 +115,35 @@ zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 1
 
 ## 6) Systemd hardening on Linux (production)
 
-```bash
-sudo env ZOCKET_HOME=/var/lib/zocket zocket harden install-linux-system \
-  --service-user zocketd \
-  --zocket-home /var/lib/zocket \
-  --web-port 18001 \
-  --mcp-host 127.0.0.1 \
-  --mcp-port 18002 \
-  --mcp-mode metadata
-```
+If you install with `--autostart system`, the installer creates and enables:
+- `zocket-web.service` (web panel on 18001)
+- `zocket-mcp-sse.service` (Claude Code, 18002)
+- `zocket-mcp-http.service` (Codex, 18003)
 
 Check:
 ```bash
 systemctl status zocket-web.service --no-pager
+systemctl status zocket-mcp-sse.service --no-pager
 systemctl status zocket-mcp-http.service --no-pager
-systemctl status zocket-mcp-http-streamable.service --no-pager
-```
-
-### Optional: systemd unit for Codex (streamable HTTP on 18003)
-
-Create `/etc/systemd/system/zocket-mcp-http-streamable.service`:
-```ini
-[Unit]
-Description=Zocket MCP HTTP Streamable (system)
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=zocketd
-Group=zocketd
-Environment=ZOCKET_HOME=/var/lib/zocket
-ExecStart=/usr/bin/python3 -m zocket mcp --transport streamable-http --mode metadata --host 127.0.0.1 --port 18003
-Restart=on-failure
-RestartSec=2
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=read-only
-ProtectKernelTunables=true
-ProtectControlGroups=true
-LockPersonality=true
-MemoryDenyWriteExecute=true
-ReadWritePaths=/var/lib/zocket
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now zocket-mcp-http-streamable.service
 ```
 
 ### Linux user-level autostart (no root)
 ```bash
-zocket autostart install --target web --web-port 18001
-zocket autostart install --target mcp --mcp-port 18002 --mcp-mode metadata --mcp-host 127.0.0.1
-zocket autostart status --target both
+systemctl --user enable --now zocket-web.service
+systemctl --user enable --now zocket-mcp-sse.service
+systemctl --user enable --now zocket-mcp-http.service
+systemctl --user status zocket-web.service --no-pager
+systemctl --user status zocket-mcp-sse.service --no-pager
+systemctl --user status zocket-mcp-http.service --no-pager
 ```
 
-### macOS launchd autostart (manual)
-Create `~/Library/LaunchAgents/dev.zocket.web.plist`, `dev.zocket.mcp-sse.plist`,
-and `dev.zocket.mcp-streamable.plist`:
+### macOS launchd autostart (installed by script)
+Installer creates and loads:
+- `~/Library/LaunchAgents/dev.zocket.web.plist`
+- `~/Library/LaunchAgents/dev.zocket.mcp-sse.plist`
+- `~/Library/LaunchAgents/dev.zocket.mcp-streamable.plist`
+
+If you need to install manually, use:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>

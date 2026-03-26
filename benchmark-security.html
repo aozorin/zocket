@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<title>Zocket Security Benchmark</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap");
+  :root{--p:#0088cc;--bg:#f4faff;--card:rgba(255,255,255,.92);--bdr:rgba(0,136,204,.18);--text:#1b2b37;--muted:#607889}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Manrope","Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding:32px}
+  h1{font-size:22px;font-weight:800;margin-bottom:4px}
+  h2{font-size:15px;font-weight:700;margin:28px 0 12px;color:var(--p)}
+  .meta{color:var(--muted);font-size:13px;margin-bottom:28px}
+  .stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+  .stat{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:14px 20px;min-width:160px}
+  .stat-val{font-size:26px;font-weight:800;color:var(--p)}
+  .stat-lbl{font-size:12px;color:var(--muted);margin-top:2px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;font-size:13px;margin-bottom:20px}
+  th{background:rgba(0,136,204,.08);text-align:left;padding:9px 12px;font-weight:700;font-size:12px;color:var(--muted);border-bottom:1px solid var(--bdr)}
+  td{padding:8px 12px;border-bottom:1px solid rgba(0,136,204,.07);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(0,136,204,.03)}
+  .pass-row td{background:rgba(15,118,110,.03)}
+  .fail-row td{background:rgba(190,18,60,.04)}
+  code{font-family:monospace;font-size:11px;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:3px}
+  .bar-cell{min-width:120px}
+  .bar{height:12px;border-radius:3px;background:linear-gradient(90deg,var(--p),#00a7ff);display:inline-block;vertical-align:middle}
+</style>
+</head><body>
+<h1>Zocket Security Module Benchmark</h1>
+<p class="meta">Date: 2026-03-12 &nbsp;|&nbsp; Node.js v22.14.0 &nbsp;|&nbsp; Detection tests: 35 &nbsp;|&nbsp; Domain tests: 18</p>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val">35/35</div><div class="stat-lbl">Detection tests pass</div></div>
+  <div class="stat"><div class="stat-val">74</div><div class="stat-lbl">API providers in registry</div></div>
+  <div class="stat"><div class="stat-val">112</div><div class="stat-lbl">Known domains</div></div>
+  <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">Semantic F1 score</div></div>
+  <div class="stat"><div class="stat-val">211k</div><div class="stat-lbl">analyzeCommand ops/sec</div></div>
+</div>
+
+<h2>1. API Registry Coverage</h2>
+<table>
+<tr><th>Category</th><th>Providers</th><th>Domains</th><th>Keywords</th><th>Bar</th></tr>
+<tr><td>Stock / Media</td><td>6</td><td>8</td><td>6</td><td class="bar-cell"><span class="bar" style="width:16px"></span></td></tr>
+<tr><td>AI / LLM</td><td>11</td><td>13</td><td>18</td><td class="bar-cell"><span class="bar" style="width:30px"></span></td></tr>
+<tr><td>Payment</td><td>8</td><td>16</td><td>9</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td>Cloud / Infrastructure</td><td>9</td><td>16</td><td>16</td><td class="bar-cell"><span class="bar" style="width:24px"></span></td></tr>
+<tr><td>Communication</td><td>10</td><td>15</td><td>12</td><td class="bar-cell"><span class="bar" style="width:27px"></span></td></tr>
+<tr><td>Auth / Identity</td><td>6</td><td>11</td><td>7</td><td class="bar-cell"><span class="bar" style="width:16px"></span></td></tr>
+<tr><td>Dev Tools</td><td>8</td><td>11</td><td>12</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td>Data / Analytics</td><td>9</td><td>12</td><td>11</td><td class="bar-cell"><span class="bar" style="width:24px"></span></td></tr>
+<tr><td>Maps / Location</td><td>4</td><td>5</td><td>8</td><td class="bar-cell"><span class="bar" style="width:11px"></span></td></tr>
+<tr><td>E-commerce</td><td>3</td><td>5</td><td>5</td><td class="bar-cell"><span class="bar" style="width:8px"></span></td></tr>
+<tr><td><b>TOTAL</b></td><td><b>74</b></td><td><b>112</b></td><td><b>104</b></td><td></td></tr>
+</table>
+
+<h2>2. Performance (50,000 iterations each)</h2>
+<table>
+<tr><th>Operation</th><th>ops/sec</th><th>ns/op</th><th>Bar</th></tr>
+<tr><td>analyzeCommand — clean (ls -la)</td><td>307 809</td><td>3249</td><td class="bar-cell"><span class="bar" style="width:40px"></span></td></tr>
+<tr><td>analyzeCommand — legitimate curl Bearer</td><td>210 832</td><td>4743</td><td class="bar-cell"><span class="bar" style="width:28px"></span></td></tr>
+<tr><td>analyzeCommand — ENV_DUMP_PIPE_NETWORK (critical)</td><td>237 523</td><td>4210</td><td class="bar-cell"><span class="bar" style="width:31px"></span></td></tr>
+<tr><td>analyzeCommand — MULTI_SECRET_IN_URL (critical)</td><td>218 151</td><td>4584</td><td class="bar-cell"><span class="bar" style="width:28px"></span></td></tr>
+<tr><td>analyzeScript node — clean fetch</td><td>223 124</td><td>4482</td><td class="bar-cell"><span class="bar" style="width:29px"></span></td></tr>
+<tr><td>analyzeScript node — Object.entries exfil</td><td>204 471</td><td>4891</td><td class="bar-cell"><span class="bar" style="width:27px"></span></td></tr>
+<tr><td>analyzeScript python — loop os.environ + requests</td><td>209 709</td><td>4769</td><td class="bar-cell"><span class="bar" style="width:27px"></span></td></tr>
+<tr><td>checkDomainMatch — known API hit (Stripe)</td><td>953 599</td><td>1049</td><td class="bar-cell"><span class="bar" style="width:124px"></span></td></tr>
+<tr><td>checkDomainMatch — known API miss (Stripe→evil)</td><td>798 192</td><td>1253</td><td class="bar-cell"><span class="bar" style="width:104px"></span></td></tr>
+<tr><td>checkDomainMatch — unknown private API</td><td>160 864</td><td>6216</td><td class="bar-cell"><span class="bar" style="width:21px"></span></td></tr>
+<tr><td>extractHints — typical project+keys</td><td>1 533 023</td><td>652</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
+</table>
+
+<h2>3. Detection Matrix (35/35 pass)</h2>
+<table>
+<tr><th>ID</th><th>Category</th><th>Scenario</th><th>Mode</th><th>Allowed</th><th>Risk</th><th>Rules Fired</th><th>Status</th></tr>
+<tr class="pass-row">
+  <td><code>L01</code></td>
+  <td>Legitimate</td>
+  <td>curl Bearer header single key</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td><code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>L02</code></td>
+  <td>Legitimate</td>
+  <td>curl POST single secret in body</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td><code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>L03</code></td>
+  <td>Legitimate</td>
+  <td>node fetch Authorization Bearer</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td>—</td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>L04</code></td>
+  <td>Legitimate</td>
+  <td>python requests Authorization Bearer</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td>—</td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>L05</code></td>
+  <td>Legitimate</td>
+  <td>clean ls command</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td>—</td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>L06</code></td>
+  <td>Legitimate</td>
+  <td>curl HTTPS static domain single key</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td><code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>L07</code></td>
+  <td>Legitimate</td>
+  <td>node axios single env var</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td>—</td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C01</code></td>
+  <td>Critical</td>
+  <td>printenv piped to curl</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>ENV_DUMP_PIPE_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C02</code></td>
+  <td>Critical</td>
+  <td>env piped to wget</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>ENV_DUMP_PIPE_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C03</code></td>
+  <td>Critical</td>
+  <td>/proc/<pid>/environ read</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>PROC_ENVIRON_READ</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C04</code></td>
+  <td>Critical</td>
+  <td>two secrets in query string</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>MULTI_SECRET_IN_URL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C05</code></td>
+  <td>Critical</td>
+  <td>two secrets in URL path</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>MULTI_SECRET_IN_URL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C06</code></td>
+  <td>Critical</td>
+  <td>bash loop printenv + curl</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>LOOP_ENV_EXFIL</code> <code>ENV_DUMP_SUBSHELL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C07</code></td>
+  <td>Critical</td>
+  <td>node Object.entries(process.env) + fetch</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>LOOP_ENV_EXFIL</code> <code>SCRIPT_ENUMERATE_ALL_ENV</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>C08</code></td>
+  <td>Critical</td>
+  <td>python loop os.environ.items() + requests</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>LOOP_ENV_EXFIL</code> <code>SCRIPT_ENUMERATE_ALL_ENV</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>H01</code></td>
+  <td>High</td>
+  <td>node base64 encoding + fetch</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
+  <td><code>ENCODE_PIPE_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>H02</code></td>
+  <td>High</td>
+  <td>bash base64 pipe curl</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
+  <td><code>ENCODE_PIPE_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>H03</code></td>
+  <td>High</td>
+  <td>/etc/shadow + requests.post</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
+  <td><code>SENSITIVE_FILE_EXFIL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>H04</code></td>
+  <td>High</td>
+  <td>~/.ssh/id_rsa curled</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
+  <td><code>SENSITIVE_FILE_EXFIL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>H05</code></td>
+  <td>High</td>
+  <td>ENV_DUMP_SUBSHELL in curl -d</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
+  <td><code>ENV_DUMP_SUBSHELL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>M01</code></td>
+  <td>Medium</td>
+  <td>printenv > file redirect</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#b45309;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">MEDIUM</span></td>
+  <td><code>REDIRECT_ENV_TO_FILE</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>M02</code></td>
+  <td>Medium</td>
+  <td>two secrets + network (not in URL)</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#b45309;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">MEDIUM</span></td>
+  <td><code>MULTIPLE_SECRETS_ARGS</code> <code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>M03</code></td>
+  <td>Medium</td>
+  <td>python subprocess curl</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#15803d;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">LOW</span></td>
+  <td><code>PYTHON_SUBPROCESS_EXFIL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>M04</code></td>
+  <td>Medium</td>
+  <td>bare printenv alone</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#b45309;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">MEDIUM</span></td>
+  <td><code>BARE_ENV_DUMP</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>A01</code></td>
+  <td>Audit</td>
+  <td>critical command allowed in audit mode</td>
+  <td><code>audit</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>ENV_DUMP_PIPE_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>O01</code></td>
+  <td>Off</td>
+  <td>any command allowed in off mode</td>
+  <td><code>off</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td>—</td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>S01</code></td>
+  <td>Supersession</td>
+  <td>ENV_DUMP_PIPE_NETWORK supersedes BARE_ENV_DUMP</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>ENV_DUMP_PIPE_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>S02</code></td>
+  <td>Supersession</td>
+  <td>MULTI_SECRET_IN_URL supersedes MULTIPLE_SECRETS_ARGS</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
+  <td><code>MULTI_SECRET_IN_URL</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>D01</code></td>
+  <td>Domain Allowlist</td>
+  <td>known domain in allowlist — allowed</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td><code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>D02</code></td>
+  <td>Domain Allowlist</td>
+  <td>unknown domain — blocked</td>
+  <td><code>enforce</code></td>
+  <td>✗ no</td>
+  <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
+  <td><code>UNKNOWN_DOMAIN</code> <code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>SD01</code></td>
+  <td>Suspicious Domain</td>
+  <td>Stripe key to correct domain — no SUSPICIOUS_DOMAIN</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td><code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>SD02</code></td>
+  <td>Suspicious Domain</td>
+  <td>Stripe key to attacker.com — SUSPICIOUS_DOMAIN fires</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#b45309;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">MEDIUM</span></td>
+  <td><code>SUSPICIOUS_DOMAIN</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>SD03</code></td>
+  <td>Suspicious Domain</td>
+  <td>Private API zorin.pw — no false positive</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td><code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>SD04</code></td>
+  <td>Suspicious Domain</td>
+  <td>Pexels key to wrong domain — SUSPICIOUS_DOMAIN fires</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#b45309;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">MEDIUM</span></td>
+  <td><code>SUSPICIOUS_DOMAIN</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+<tr class="pass-row">
+  <td><code>SD05</code></td>
+  <td>Suspicious Domain</td>
+  <td>No hints — SUSPICIOUS_DOMAIN disabled</td>
+  <td><code>enforce</code></td>
+  <td>✓ yes</td>
+  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
+  <td><code>SINGLE_ENV_NETWORK</code></td>
+  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
+</tr>
+</table>
+
+<h2>4. Rule Firing Frequency</h2>
+<table>
+<tr><th>Rule</th><th>Count</th><th>Freq</th><th>Bar</th></tr>
+<tr><td><code>SINGLE_ENV_NETWORK</code></td><td>9</td><td>26%</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
+<tr><td><code>ENV_DUMP_PIPE_NETWORK</code></td><td>4</td><td>11%</td><td class="bar-cell"><span class="bar" style="width:89px"></span></td></tr>
+<tr><td><code>MULTI_SECRET_IN_URL</code></td><td>3</td><td>9%</td><td class="bar-cell"><span class="bar" style="width:67px"></span></td></tr>
+<tr><td><code>LOOP_ENV_EXFIL</code></td><td>3</td><td>9%</td><td class="bar-cell"><span class="bar" style="width:67px"></span></td></tr>
+<tr><td><code>ENV_DUMP_SUBSHELL</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
+<tr><td><code>SCRIPT_ENUMERATE_ALL_ENV</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
+<tr><td><code>ENCODE_PIPE_NETWORK</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
+<tr><td><code>SENSITIVE_FILE_EXFIL</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
+<tr><td><code>SUSPICIOUS_DOMAIN</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
+<tr><td><code>PROC_ENVIRON_READ</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td><code>REDIRECT_ENV_TO_FILE</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td><code>MULTIPLE_SECRETS_ARGS</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td><code>PYTHON_SUBPROCESS_EXFIL</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td><code>BARE_ENV_DUMP</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td><code>UNKNOWN_DOMAIN</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+</table>
+
+<h2>5. Score Distribution</h2>
+<table>
+<tr><th>Score Range</th><th>Count</th><th>Bar</th></tr>
+<tr><td>0</td><td>12</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
+<tr><td>1-4 (low)</td><td>1</td><td class="bar-cell"><span class="bar" style="width:17px"></span></td></tr>
+<tr><td>5-9 (medium)</td><td>5</td><td class="bar-cell"><span class="bar" style="width:83px"></span></td></tr>
+<tr><td>10-19 (high)</td><td>6</td><td class="bar-cell"><span class="bar" style="width:100px"></span></td></tr>
+<tr><td>20+ (critical)</td><td>11</td><td class="bar-cell"><span class="bar" style="width:183px"></span></td></tr>
+</table>
+
+<h2>6. SUSPICIOUS_DOMAIN Semantic Matching (18/18 pass)</h2>
+<table>
+<tr><th>Test Case</th><th>Expected</th><th>Result</th><th>Status</th></tr>
+<tr class="pass-row"><td>Stripe → api.stripe.com (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Stripe → attacker.com (mismatch)</td><td><code>MISMATCH</code></td><td style="color:#be123c;font-weight:700">MISMATCH</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Stripe → checkout.stripe.com (subdomain ok)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>OpenAI → api.openai.com (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>OpenAI → evil.io (mismatch)</td><td><code>MISMATCH</code></td><td style="color:#be123c;font-weight:700">MISMATCH</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Pexels → api.pexels.com (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Pexels → really-safety.com (mismatch)</td><td><code>MISMATCH</code></td><td style="color:#be123c;font-weight:700">MISMATCH</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Telegram → api.telegram.org (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>GitHub → api.github.com (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>GitHub → github.com (alternate correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Private API zorin.pw (no false positive)</td><td><code>no-match</code></td><td style="color:#607889;font-weight:700">no-match</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Generic key + unknown domain (no FP)</td><td><code>no-match</code></td><td style="color:#607889;font-weight:700">no-match</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>AWS → amazonaws.com (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>AWS → s3.amazonaws.com (subdomain ok)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>AWS key → fake subdomain spoofing (mismatch)</td><td><code>MISMATCH</code></td><td style="color:#be123c;font-weight:700">MISMATCH</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Stripe key → stripe domain spoofing (mismatch)</td><td><code>MISMATCH</code></td><td style="color:#be123c;font-weight:700">MISMATCH</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Anthropic → api.anthropic.com (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+<tr class="pass-row"><td>Discord → discord.com (correct)</td><td><code>ok</code></td><td style="color:#15803d;font-weight:700">ok</td><td><span style="color:#15803d;font-weight:700">PASS</span></td></tr>
+</table>
+<p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+  Confusion Matrix (positive = flagged SUSPICIOUS): TP=5 TN=13 FP=0 FN=0
+  &nbsp;|&nbsp; Precision=100.0% &nbsp;|&nbsp; Recall=100.0% &nbsp;|&nbsp; F1=100.0%
+</p>
+
+</body></html>

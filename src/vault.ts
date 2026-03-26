@@ -18,6 +18,8 @@ export interface ProjectEntry {
   updated_at: string
   secrets: Record<string, SecretEntry>
   folder_path?: string
+  /** Domains this project's secrets are allowed to be sent to. null = no restriction. */
+  allowed_domains?: string[] | null
 }
 
 interface VaultData {
@@ -31,6 +33,7 @@ export interface ProjectInfo {
   created_at: string
   folder_path?: string
   secret_count: number
+  allowed_domains?: string[] | null
 }
 
 export class VaultService {
@@ -89,7 +92,22 @@ export class VaultService {
       created_at: p.created_at,
       folder_path: p.folder_path,
       secret_count: Object.keys(p.secrets).length,
+      allowed_domains: p.allowed_domains,
     }))
+  }
+
+  async setAllowedDomains(project: string, domains: string[] | null): Promise<void> {
+    await this.withLock(data => {
+      if (!data.projects[project]) throw new Error(`Project not found: ${project}`)
+      data.projects[project].allowed_domains = domains
+      data.projects[project].updated_at = new Date().toISOString()
+    })
+  }
+
+  async getAllowedDomains(project: string): Promise<string[] | null> {
+    const data = this.load()
+    if (!data.projects[project]) throw new Error(`Project not found: ${project}`)
+    return data.projects[project].allowed_domains ?? null
   }
 
   async setSecret(project: string, key: string, value: string, description: string): Promise<void> {
@@ -113,6 +131,16 @@ export class VaultService {
     const data = this.load()
     if (!data.projects[project]) throw new Error(`Project not found: ${project}`)
     return Object.keys(data.projects[project].secrets)
+  }
+
+  async listSecrets(project: string): Promise<Array<{ key: string; description: string; updated_at: string }>> {
+    const data = this.load()
+    if (!data.projects[project]) throw new Error(`Project not found: ${project}`)
+    return Object.entries(data.projects[project].secrets).map(([key, s]) => ({
+      key,
+      description: s.description,
+      updated_at:  s.updated_at,
+    }))
   }
 
   async getEnv(project: string): Promise<Record<string, string>> {
