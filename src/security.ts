@@ -75,7 +75,6 @@ interface Ctx {
   text:       string          // effective text to match against
   envRefs:    string[]        // distinct $VAR names found
   hasNetwork: boolean
-  lang?:      'node' | 'python'
 }
 
 const NETWORK_RE = /\b(curl|wget|nc\b|ncat|socat|netcat|fetch|axios|requests?\.|urllib|http\.client|httpx|aiohttp|XMLHttpRequest|require\(['"]https?['"]\)|require\(["']node:https?["']\))\b/
@@ -85,8 +84,8 @@ function envRefsIn(text: string): string[] {
   return [...new Set(matches)]
 }
 
-function buildCtx(text: string, lang?: 'node' | 'python'): Ctx {
-  return { text, envRefs: envRefsIn(text), hasNetwork: NETWORK_RE.test(text), lang }
+function buildCtx(text: string): Ctx {
+  return { text, envRefs: envRefsIn(text), hasNetwork: NETWORK_RE.test(text) }
 }
 
 // ─── Rules ───────────────────────────────────────────────────────────────────
@@ -202,15 +201,6 @@ const RULES: Rule[] = [
     weight: W.MEDIUM,
     test: c => /\b(printenv|env)\b[^|]*>/.test(c.text),
   },
-  {
-    id: 'PYTHON_SUBPROCESS_EXFIL',
-    description: 'Python subprocess call invoking network tool (curl/wget/nc)',
-    severity: 'medium',
-    weight: W.MEDIUM,
-    test: c =>
-      c.lang === 'python' &&
-      /subprocess\.(run|Popen|call|check_output)\([^)]*\b(curl|wget|nc\b|netcat)\b/.test(c.text),
-  },
 
   // ── Low ──────────────────────────────────────────────────────────────────
   {
@@ -294,9 +284,9 @@ export class SecurityAnalyzer {
     return this.analyze(buildCtx(text))
   }
 
-  analyzeScript(lang: 'node' | 'python', code: string): SecurityResult {
+  analyzeScript(_lang: 'node', code: string): SecurityResult {
     if (this.cfg.mode === 'off') return allow()
-    const ctx = buildCtx(code, lang)
+    const ctx = buildCtx(code)
     return this.analyze(ctx)
   }
 

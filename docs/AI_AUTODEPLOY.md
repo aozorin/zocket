@@ -6,22 +6,22 @@ This is the file you can send to an AI coding agent so it can deploy zocket end-
 
 If this repo is already present locally:
 ```bash
-python3 scripts/ai-autodeploy.py --repo-url https://github.com/your-org/zocket.git --repo-ref main
+bash scripts/install-zocket.sh --source local
 ```
 
-If only the file is available, the script will clone the repo and run the platform installer.
+If only the file is available, the script will fetch and run the platform installer:
+```bash
+curl -fsSL https://raw.githubusercontent.com/aozorin/zocket/main/scripts/install-zocket.sh | bash
+```
 
 ## Agent task prompt (copy/paste)
 
 ```text
 Deploy zocket on this machine with secure defaults:
 1) Detect OS and shell.
-2) Run scripts/ai-autodeploy.py with:
-   --lang en
-   --web-port 18001
-   --mcp-port 18002
-   --mcp-mode metadata
-   --autostart user (Linux/macOS) or enabled startup task (Windows)
+2) Run installer:
+   - Linux/macOS: curl -fsSL https://raw.githubusercontent.com/aozorin/zocket/main/scripts/install-zocket.sh | bash
+   - Windows: irm https://raw.githubusercontent.com/aozorin/zocket/main/scripts/install-zocket.ps1 | iex
 3) Verify:
    - web panel on http://127.0.0.1:18001
    - MCP SSE endpoint on http://127.0.0.1:18002/sse (Claude Code)
@@ -33,11 +33,7 @@ Deploy zocket on this machine with secure defaults:
 ## Optional production profile (Linux system services)
 
 ```bash
-python3 scripts/ai-autodeploy.py \
-  --repo-url https://github.com/your-org/zocket.git \
-  --repo-ref main \
-  --autostart system \
-  --zocket-home /var/lib/zocket
+bash scripts/install-zocket.sh --source git --repo-url https://github.com/aozorin/zocket.git --repo-ref main --autostart system --zocket-home /var/lib/zocket
 ```
 
 ## Post-deploy checklist for agent

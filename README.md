@@ -36,18 +36,23 @@ zocket init
 
 ```bash
 zocket init
-zocket start --host 127.0.0.1 --web-port 18001 --mcp-port 18002 --mode admin
+zocket start --host 127.0.0.1 --web-port 18001 --mcp-port 18002 --mcp-stream-port 18003 --mode admin
 ```
 
 Open `http://127.0.0.1:18001`.
 
-## Codex (streamable HTTP)
+## CLI / TUI
 
-Codex requires streamable HTTP on `127.0.0.1:18003/mcp`. The Node CLI does **SSE only** today.
-Until streamable HTTP is implemented in Node, run the companion Python service (separate package):
-
+Full CLI management:
 ```bash
-python3 -m zocket mcp --transport streamable-http --mode admin --host 127.0.0.1 --port 18003
+zocket projects list
+zocket projects create myproj --description \"demo\"
+zocket secrets set myproj API_KEY abc123 --description \"example\"
+```
+
+Interactive TUI:
+```bash
+zocket tui
 ```
 
 ## Docs

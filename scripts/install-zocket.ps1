@@ -1,9 +1,8 @@
 Param(
-  [ValidateSet("Auto", "Local", "Git", "PyPI")]
+  [ValidateSet("Auto", "Local", "Git", "Npm")]
   [string]$Source = "Auto",
-  [string]$RepoUrl = "https://github.com/your-org/zocket.git",
+  [string]$RepoUrl = "https://github.com/aozorin/zocket.git",
   [string]$RepoRef = "main",
-  [string]$InstallRoot = "$env:LOCALAPPDATA\zocket",
   [string]$ZocketHome = "$env:USERPROFILE\.zocket",
   [ValidateSet("en", "ru")]
   [string]$Lang = "en",
@@ -11,28 +10,11 @@ Param(
   [int]$McpPort = 18002,
   [int]$McpStreamPort = 18003,
   [ValidateSet("metadata", "admin")]
-  [string]$McpMode = "metadata",
+  [string]$McpMode = "admin",
   [bool]$EnableAutostart = $true
 )
 
 $ErrorActionPreference = "Stop"
-
-function Resolve-Python {
-  if (Get-Command py -ErrorAction SilentlyContinue) {
-    return @{Cmd = "py"; Prefix = @("-3")}
-  }
-  if (Get-Command python -ErrorAction SilentlyContinue) {
-    return @{Cmd = "python"; Prefix = @()}
-  }
-  throw "Python 3.10+ not found. Install Python and rerun."
-}
-
-function Run-Step([string]$Cmd, [string[]]$Args) {
-  & $Cmd @Args
-  if ($LASTEXITCODE -ne 0) {
-    throw "Command failed: $Cmd $($Args -join ' ')"
-  }
-}
 
 function Ensure-Dir([string]$Path) {
   if (-not (Test-Path -LiteralPath $Path)) {
@@ -40,76 +22,52 @@ function Ensure-Dir([string]$Path) {
   }
 }
 
+function Ensure-Node {
+  if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    throw "Node.js not found. Install Node.js 18+ and rerun."
+  }
+  if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    throw "npm not found. Install Node.js 18+ (includes npm) and rerun."
+  }
+}
+
+Ensure-Node
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 if ($Source -eq "Auto") {
-  if (Test-Path -LiteralPath (Join-Path $repoRoot "pyproject.toml")) {
+  if (Test-Path -LiteralPath (Join-Path $repoRoot "package.json")) {
     $Source = "Local"
   } else {
-    $Source = "Git"
+    $Source = "Npm"
   }
 }
 
-Ensure-Dir $InstallRoot
-$srcDir = Join-Path $InstallRoot "src"
-
-$pkgSource = $null
 if ($Source -eq "Local") {
-  $pkgSource = $repoRoot
+  npm i -g $repoRoot
 } elseif ($Source -eq "Git") {
-  if (Test-Path -LiteralPath (Join-Path $srcDir ".git")) {
-    Run-Step "git" @("-C", $srcDir, "fetch", "--all", "--tags")
-    Run-Step "git" @("-C", $srcDir, "checkout", $RepoRef)
-    Run-Step "git" @("-C", $srcDir, "pull", "--ff-only")
-  } else {
-    if (Test-Path -LiteralPath $srcDir) {
-      Remove-Item -LiteralPath $srcDir -Recurse -Force
-    }
-    Run-Step "git" @("clone", "--depth", "1", "--branch", $RepoRef, $RepoUrl, $srcDir)
-  }
-  $pkgSource = $srcDir
+  npm i -g "git+$RepoUrl#$RepoRef"
 } else {
-  $pkgSource = "zocket"
+  npm i -g @ao_zorin/zocket
 }
 
-$py = Resolve-Python
-$venvDir = Join-Path $InstallRoot "venv"
-$venvPy = Join-Path $venvDir "Scripts\python.exe"
-$zocketExe = Join-Path $venvDir "Scripts\zocket.exe"
-
-Run-Step $py.Cmd ($py.Prefix + @("-m", "venv", $venvDir))
-Run-Step $venvPy @("-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel")
-
-if ($Source -eq "PyPI") {
-  Run-Step $venvPy @("-m", "pip", "install", "--upgrade", $pkgSource)
-} else {
-  Run-Step $venvPy @("-m", "pip", "install", "--upgrade", $pkgSource)
+$zocketBin = (Get-Command zocket).Source
+if (-not $zocketBin) {
+  throw "zocket binary not found after install"
 }
 
 Ensure-Dir $ZocketHome
 $env:ZOCKET_HOME = $ZocketHome
 
-if (-not (Test-Path -LiteralPath (Join-Path $ZocketHome "vault.enc"))) {
-  Run-Step $zocketExe @("init")
-}
-Run-Step $zocketExe @("config", "set-language", $Lang)
+& $zocketBin init | Out-Null
 
 if ($EnableAutostart) {
-  $webTask = "ZocketWeb"
-  $mcpSseTask = "ZocketMcpSse"
-  $mcpStreamTask = "ZocketMcpStreamable"
-
-  $webCmd = "`"$venvPy`" -m zocket web --host 127.0.0.1 --port $WebPort"
-  $mcpSseCmd = "`"$venvPy`" -m zocket mcp --transport sse --mode $McpMode --host 127.0.0.1 --port $McpPort"
-  $mcpStreamCmd = "`"$venvPy`" -m zocket mcp --transport streamable-http --mode $McpMode --host 127.0.0.1 --port $McpStreamPort"
-
-  schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $webTask /TR $webCmd | Out-Null
-  schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $mcpSseTask /TR $mcpSseCmd | Out-Null
-  schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $mcpStreamTask /TR $mcpStreamCmd | Out-Null
+  $taskName = "Zocket"
+  $cmd = "\"$zocketBin\" start --host 127.0.0.1 --web-port $WebPort --mcp-port $McpPort --mcp-stream-port $McpStreamPort --mode $McpMode"
+  schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $taskName /TR $cmd | Out-Null
 }
 
 Write-Output "zocket installed successfully."
-Write-Output "venv: $venvDir"
-Write-Output "zocket: $zocketExe"
+Write-Output "zocket: $zocketBin"
 Write-Output "ZOCKET_HOME=$ZocketHome"
 Write-Output "web panel: http://127.0.0.1:$WebPort"
 Write-Output "mcp sse:   http://127.0.0.1:$McpPort/sse"

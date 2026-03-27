@@ -1,4 +1,4 @@
-# Git + npm + Python Release Guide
+# Git + npm Release Guide
 
 ## 1) Initialize git project
 
@@ -17,15 +17,7 @@ git push -u origin main
 bash scripts/release-check.sh
 ```
 
-## 3) Publish Python package (PyPI)
-
-```bash
-python3 -m pip install --upgrade build twine
-python3 -m build
-twine upload dist/*
-```
-
-## 4) Publish npm package
+## 3) Publish npm package
 
 Update metadata in `package.json`:
 - `name`
@@ -39,15 +31,14 @@ npm login
 npm publish --access public
 ```
 
-## 5) Tag release
+## 4) Tag release
 
 ```bash
 git tag -a v1.0.0 -m "zocket v1.0.0"
 git push origin v1.0.0
 ```
 
-## 6) Optional GitHub Release artifacts
+## 5) Optional GitHub Release artifacts
 
 Upload:
-- Python wheels/sdist from `dist/`
 - npm package tarball from `npm pack`

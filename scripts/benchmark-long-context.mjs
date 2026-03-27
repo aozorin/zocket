@@ -34,7 +34,7 @@ Rules:
 const TOOL_SCHEMAS_TEXT = `list_projects: List all projects. Returns name description secret_count folder_path. No secret values. {type:object,properties:{},required:[]}
 list_project_keys: List secret key names for a project. Values never returned. {type:object,properties:{project:{type:string}},required:[project]}
 run_with_project_env: Run command with project secrets injected as env vars. Use $VAR placeholders substituted server-side. Tip use output_filter jq expression to extract only needed field. {type:object,properties:{project:{type:string},command:{type:array},max_chars:{type:integer},output_filter:{type:string}},required:[project,command]}
-run_script: Run inline script with project secrets as env vars. Use instead of multiple run_with_project_env calls. Filesystem NOT shared between calls. Secret values never in conversation. {type:object,properties:{project:{type:string},lang:{type:string,enum:[node,python]},code:{type:string},max_chars:{type:integer}},required:[project,lang,code]}
+run_script: Run inline node script with project secrets as env vars. Use instead of multiple run_with_project_env calls. Filesystem NOT shared between calls. Secret values never in conversation. {type:object,properties:{project:{type:string},lang:{type:string,enum:[node]},code:{type:string},max_chars:{type:integer}},required:[project,lang,code]}
 env_set: Insert or update key=value pair in .env file. Creates file if not exists. {type:object,properties:{path:{type:string},key:{type:string},value:{type:string}},required:[path,key,value]}`
 
 // Token costs for each component

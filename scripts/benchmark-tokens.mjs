@@ -76,7 +76,7 @@ const ZOCKET_TOOLS = [
       type: 'object',
       properties: {
         project: { type: 'string' },
-        lang: { type: 'string', enum: ['node', 'python'] },
+        lang: { type: 'string', enum: ['node'] },
         code: { type: 'string' },
         max_chars: { type: 'integer' },
       },

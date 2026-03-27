@@ -184,18 +184,18 @@ function buildCatalog(services: McpServices): CatalogEntry[] {
 
     {
       name: 'run_script',
-      summary: 'Run an inline node/python script with project secrets injected as env vars. Prefer over multiple run_with_project_env calls.',
+      summary: 'Run an inline node script with project secrets injected as env vars. Prefer over multiple run_with_project_env calls.',
       register: server => {
         server.tool(
           'run_script',
           [
-            'Run an inline script with project secrets available as environment variables.',
+            'Run an inline node script with project secrets available as environment variables.',
             'Use this instead of multiple run_with_project_env calls — write the full logic in one script.',
             'Filesystem is NOT shared between calls. Secret values never appear in this conversation.',
           ].join(' '),
           {
             project: z.string().describe('Project name'),
-            lang: z.enum(['node', 'python']).describe('Script language'),
+            lang: z.enum(['node']).describe('Script language'),
             code: z.string().min(1).describe('Full script source code'),
             max_chars: z.number().int().min(1).max(32000).optional().describe('Max output chars (default ~500)'),
             confirm: z.boolean().optional().describe('Set to true to confirm execution of a medium-risk script after reviewing the warning'),

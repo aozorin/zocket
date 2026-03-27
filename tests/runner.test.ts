@@ -60,17 +60,6 @@ describe('runScript', () => {
     expect(r.stdout.trim()).toBe('secret123')
   })
 
-  it('runs a python script', () => {
-    const r = runScript('python', `print('py ok')`, {})
-    expect(r.exit_code).toBe(0)
-    expect(r.stdout.trim()).toBe('py ok')
-  })
-
-  it('injects env into python script', () => {
-    const r = runScript('python', `import os; print(os.environ['KEY'])`, { KEY: 'pyval' })
-    expect(r.stdout.trim()).toBe('pyval')
-  })
-
   it('truncates to maxChars', () => {
     const r = runScript('node', `console.log('abcdefgh')`, {}, 3)
     expect(r.stdout).toBe('abc')

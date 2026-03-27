@@ -27,14 +27,14 @@
 </style>
 </head><body>
 <h1>Zocket Security Module Benchmark</h1>
-<p class="meta">Date: 2026-03-12 &nbsp;|&nbsp; Node.js v22.14.0 &nbsp;|&nbsp; Detection tests: 35 &nbsp;|&nbsp; Domain tests: 18</p>
+<p class="meta">Date: 2026-03-26 &nbsp;|&nbsp; Node.js v22.14.0 &nbsp;|&nbsp; Detection tests: 31 &nbsp;|&nbsp; Domain tests: 18</p>
 
 <div class="stats">
-  <div class="stat"><div class="stat-val">35/35</div><div class="stat-lbl">Detection tests pass</div></div>
+  <div class="stat"><div class="stat-val">31/31</div><div class="stat-lbl">Detection tests pass</div></div>
   <div class="stat"><div class="stat-val">74</div><div class="stat-lbl">API providers in registry</div></div>
   <div class="stat"><div class="stat-val">112</div><div class="stat-lbl">Known domains</div></div>
   <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">Semantic F1 score</div></div>
-  <div class="stat"><div class="stat-val">211k</div><div class="stat-lbl">analyzeCommand ops/sec</div></div>
+  <div class="stat"><div class="stat-val">208k</div><div class="stat-lbl">analyzeCommand ops/sec</div></div>
 </div>
 
 <h2>1. API Registry Coverage</h2>
@@ -56,20 +56,19 @@
 <h2>2. Performance (50,000 iterations each)</h2>
 <table>
 <tr><th>Operation</th><th>ops/sec</th><th>ns/op</th><th>Bar</th></tr>
-<tr><td>analyzeCommand — clean (ls -la)</td><td>307 809</td><td>3249</td><td class="bar-cell"><span class="bar" style="width:40px"></span></td></tr>
-<tr><td>analyzeCommand — legitimate curl Bearer</td><td>210 832</td><td>4743</td><td class="bar-cell"><span class="bar" style="width:28px"></span></td></tr>
-<tr><td>analyzeCommand — ENV_DUMP_PIPE_NETWORK (critical)</td><td>237 523</td><td>4210</td><td class="bar-cell"><span class="bar" style="width:31px"></span></td></tr>
-<tr><td>analyzeCommand — MULTI_SECRET_IN_URL (critical)</td><td>218 151</td><td>4584</td><td class="bar-cell"><span class="bar" style="width:28px"></span></td></tr>
-<tr><td>analyzeScript node — clean fetch</td><td>223 124</td><td>4482</td><td class="bar-cell"><span class="bar" style="width:29px"></span></td></tr>
-<tr><td>analyzeScript node — Object.entries exfil</td><td>204 471</td><td>4891</td><td class="bar-cell"><span class="bar" style="width:27px"></span></td></tr>
-<tr><td>analyzeScript python — loop os.environ + requests</td><td>209 709</td><td>4769</td><td class="bar-cell"><span class="bar" style="width:27px"></span></td></tr>
-<tr><td>checkDomainMatch — known API hit (Stripe)</td><td>953 599</td><td>1049</td><td class="bar-cell"><span class="bar" style="width:124px"></span></td></tr>
-<tr><td>checkDomainMatch — known API miss (Stripe→evil)</td><td>798 192</td><td>1253</td><td class="bar-cell"><span class="bar" style="width:104px"></span></td></tr>
-<tr><td>checkDomainMatch — unknown private API</td><td>160 864</td><td>6216</td><td class="bar-cell"><span class="bar" style="width:21px"></span></td></tr>
-<tr><td>extractHints — typical project+keys</td><td>1 533 023</td><td>652</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
+<tr><td>analyzeCommand — clean (ls -la)</td><td>307,745</td><td>3249</td><td class="bar-cell"><span class="bar" style="width:45px"></span></td></tr>
+<tr><td>analyzeCommand — legitimate curl Bearer</td><td>208,018</td><td>4807</td><td class="bar-cell"><span class="bar" style="width:31px"></span></td></tr>
+<tr><td>analyzeCommand — ENV_DUMP_PIPE_NETWORK (critical)</td><td>279,817</td><td>3574</td><td class="bar-cell"><span class="bar" style="width:41px"></span></td></tr>
+<tr><td>analyzeCommand — MULTI_SECRET_IN_URL (critical)</td><td>226,883</td><td>4408</td><td class="bar-cell"><span class="bar" style="width:33px"></span></td></tr>
+<tr><td>analyzeScript node — clean fetch</td><td>225,631</td><td>4432</td><td class="bar-cell"><span class="bar" style="width:33px"></span></td></tr>
+<tr><td>analyzeScript node — Object.entries exfil</td><td>187,488</td><td>5334</td><td class="bar-cell"><span class="bar" style="width:28px"></span></td></tr>
+<tr><td>checkDomainMatch — known API hit (Stripe)</td><td>762,971</td><td>1311</td><td class="bar-cell"><span class="bar" style="width:113px"></span></td></tr>
+<tr><td>checkDomainMatch — known API miss (Stripe→evil)</td><td>667,517</td><td>1498</td><td class="bar-cell"><span class="bar" style="width:99px"></span></td></tr>
+<tr><td>checkDomainMatch — unknown private API</td><td>129,136</td><td>7744</td><td class="bar-cell"><span class="bar" style="width:19px"></span></td></tr>
+<tr><td>extractHints — typical project+keys</td><td>1,354,881</td><td>738</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
 </table>
 
-<h2>3. Detection Matrix (35/35 pass)</h2>
+<h2>3. Detection Matrix (31/31 pass)</h2>
 <table>
 <tr><th>ID</th><th>Category</th><th>Scenario</th><th>Mode</th><th>Allowed</th><th>Risk</th><th>Rules Fired</th><th>Status</th></tr>
 <tr class="pass-row">
@@ -96,16 +95,6 @@
   <td><code>L03</code></td>
   <td>Legitimate</td>
   <td>node fetch Authorization Bearer</td>
-  <td><code>enforce</code></td>
-  <td>✓ yes</td>
-  <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
-  <td>—</td>
-  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
-</tr>
-<tr class="pass-row">
-  <td><code>L04</code></td>
-  <td>Legitimate</td>
-  <td>python requests Authorization Bearer</td>
   <td><code>enforce</code></td>
   <td>✓ yes</td>
   <td><span style="background:#374151;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">NONE</span></td>
@@ -213,16 +202,6 @@
   <td><span style="color:#15803d;font-weight:700">PASS</span></td>
 </tr>
 <tr class="pass-row">
-  <td><code>C08</code></td>
-  <td>Critical</td>
-  <td>python loop os.environ.items() + requests</td>
-  <td><code>enforce</code></td>
-  <td>✗ no</td>
-  <td><span style="background:#be123c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">CRITICAL</span></td>
-  <td><code>LOOP_ENV_EXFIL</code> <code>SCRIPT_ENUMERATE_ALL_ENV</code></td>
-  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
-</tr>
-<tr class="pass-row">
   <td><code>H01</code></td>
   <td>High</td>
   <td>node base64 encoding + fetch</td>
@@ -240,16 +219,6 @@
   <td>✗ no</td>
   <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
   <td><code>ENCODE_PIPE_NETWORK</code></td>
-  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
-</tr>
-<tr class="pass-row">
-  <td><code>H03</code></td>
-  <td>High</td>
-  <td>/etc/shadow + requests.post</td>
-  <td><code>enforce</code></td>
-  <td>✗ no</td>
-  <td><span style="background:#c2410c;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">HIGH</span></td>
-  <td><code>SENSITIVE_FILE_EXFIL</code></td>
   <td><span style="color:#15803d;font-weight:700">PASS</span></td>
 </tr>
 <tr class="pass-row">
@@ -290,16 +259,6 @@
   <td>✓ yes</td>
   <td><span style="background:#b45309;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">MEDIUM</span></td>
   <td><code>MULTIPLE_SECRETS_ARGS</code> <code>SINGLE_ENV_NETWORK</code></td>
-  <td><span style="color:#15803d;font-weight:700">PASS</span></td>
-</tr>
-<tr class="pass-row">
-  <td><code>M03</code></td>
-  <td>Medium</td>
-  <td>python subprocess curl</td>
-  <td><code>enforce</code></td>
-  <td>✓ yes</td>
-  <td><span style="background:#15803d;color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">LOW</span></td>
-  <td><code>PYTHON_SUBPROCESS_EXFIL</code></td>
   <td><span style="color:#15803d;font-weight:700">PASS</span></td>
 </tr>
 <tr class="pass-row">
@@ -427,19 +386,18 @@
 <h2>4. Rule Firing Frequency</h2>
 <table>
 <tr><th>Rule</th><th>Count</th><th>Freq</th><th>Bar</th></tr>
-<tr><td><code>SINGLE_ENV_NETWORK</code></td><td>9</td><td>26%</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
-<tr><td><code>ENV_DUMP_PIPE_NETWORK</code></td><td>4</td><td>11%</td><td class="bar-cell"><span class="bar" style="width:89px"></span></td></tr>
-<tr><td><code>MULTI_SECRET_IN_URL</code></td><td>3</td><td>9%</td><td class="bar-cell"><span class="bar" style="width:67px"></span></td></tr>
-<tr><td><code>LOOP_ENV_EXFIL</code></td><td>3</td><td>9%</td><td class="bar-cell"><span class="bar" style="width:67px"></span></td></tr>
+<tr><td><code>SINGLE_ENV_NETWORK</code></td><td>9</td><td>29%</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
+<tr><td><code>ENV_DUMP_PIPE_NETWORK</code></td><td>4</td><td>13%</td><td class="bar-cell"><span class="bar" style="width:89px"></span></td></tr>
+<tr><td><code>MULTI_SECRET_IN_URL</code></td><td>3</td><td>10%</td><td class="bar-cell"><span class="bar" style="width:67px"></span></td></tr>
+<tr><td><code>LOOP_ENV_EXFIL</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
 <tr><td><code>ENV_DUMP_SUBSHELL</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
-<tr><td><code>SCRIPT_ENUMERATE_ALL_ENV</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
 <tr><td><code>ENCODE_PIPE_NETWORK</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
-<tr><td><code>SENSITIVE_FILE_EXFIL</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
 <tr><td><code>SUSPICIOUS_DOMAIN</code></td><td>2</td><td>6%</td><td class="bar-cell"><span class="bar" style="width:44px"></span></td></tr>
 <tr><td><code>PROC_ENVIRON_READ</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td><code>SCRIPT_ENUMERATE_ALL_ENV</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
+<tr><td><code>SENSITIVE_FILE_EXFIL</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
 <tr><td><code>REDIRECT_ENV_TO_FILE</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
 <tr><td><code>MULTIPLE_SECRETS_ARGS</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
-<tr><td><code>PYTHON_SUBPROCESS_EXFIL</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
 <tr><td><code>BARE_ENV_DUMP</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
 <tr><td><code>UNKNOWN_DOMAIN</code></td><td>1</td><td>3%</td><td class="bar-cell"><span class="bar" style="width:22px"></span></td></tr>
 </table>
@@ -447,11 +405,11 @@
 <h2>5. Score Distribution</h2>
 <table>
 <tr><th>Score Range</th><th>Count</th><th>Bar</th></tr>
-<tr><td>0</td><td>12</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
-<tr><td>1-4 (low)</td><td>1</td><td class="bar-cell"><span class="bar" style="width:17px"></span></td></tr>
-<tr><td>5-9 (medium)</td><td>5</td><td class="bar-cell"><span class="bar" style="width:83px"></span></td></tr>
-<tr><td>10-19 (high)</td><td>6</td><td class="bar-cell"><span class="bar" style="width:100px"></span></td></tr>
-<tr><td>20+ (critical)</td><td>11</td><td class="bar-cell"><span class="bar" style="width:183px"></span></td></tr>
+<tr><td>0</td><td>11</td><td class="bar-cell"><span class="bar" style="width:200px"></span></td></tr>
+<tr><td>1-4 (low)</td><td>0</td><td class="bar-cell"><span class="bar" style="width:0px"></span></td></tr>
+<tr><td>5-9 (medium)</td><td>5</td><td class="bar-cell"><span class="bar" style="width:91px"></span></td></tr>
+<tr><td>10-19 (high)</td><td>5</td><td class="bar-cell"><span class="bar" style="width:91px"></span></td></tr>
+<tr><td>20+ (critical)</td><td>10</td><td class="bar-cell"><span class="bar" style="width:182px"></span></td></tr>
 </table>
 
 <h2>6. SUSPICIOUS_DOMAIN Semantic Matching (18/18 pass)</h2>

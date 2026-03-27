@@ -4,7 +4,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { randomBytes } from 'crypto'
 
-export type ScriptLang = 'node' | 'python'
+export type ScriptLang = 'node'
 
 export interface RunResult {
   exit_code: number
@@ -73,17 +73,17 @@ export function runCommand(
  * Used by run_script MCP tool.
  */
 export function runScript(
-  lang: ScriptLang,
+  _lang: ScriptLang,
   code: string,
   env: Record<string, string>,
   maxChars = 500,
 ): RunResult {
-  const ext = lang === 'node' ? '.mjs' : '.py'
+  const ext = '.mjs'
   const tmpFile = join(tmpdir(), `zkt-${randomBytes(8).toString('hex')}${ext}`)
 
   try {
     writeFileSync(tmpFile, code, 'utf8')
-    const bin = lang === 'node' ? 'node' : 'python3'
+    const bin = 'node'
 
     const proc = spawnSync(bin, [tmpFile], {
       env: { ...process.env, ...env },

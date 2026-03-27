@@ -39,7 +39,7 @@ const ZOCKET = {
     'list_projects: List all projects. name description secret_count folder_path. No values. {}',
     'list_project_keys: List secret key names. Values never returned. {project:string}',
     'run_with_project_env: Run command with secrets as env vars. $VAR substituted server-side. output_filter:jq max_chars:int. {project,command,max_chars,output_filter}',
-    'run_script: Run inline node/python script with secrets as env. One script instead of many calls. Filesystem NOT shared. Values never in conversation. {project,lang,code,max_chars}',
+    'run_script: Run inline node script with secrets as env. One script instead of many calls. Filesystem NOT shared. Values never in conversation. {project,lang,code,max_chars}',
     'env_keys: List key names in .env file. Values never returned. {path}',
     'env_set: Insert or update key=value in .env. Creates if missing. {path,key,value}',
     'get_exec_policy: Get execution policy. {}',

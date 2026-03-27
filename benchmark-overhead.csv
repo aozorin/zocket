@@ -1,7 +1,7 @@
 mode,lang,fixed_per_call_tokens
 manual,en,6
 manual,ru,6
-eager,en,231
-eager,ru,282
+eager,en,230
+eager,ru,281
 lazy,en,112
 lazy,ru,163

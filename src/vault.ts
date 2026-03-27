@@ -54,6 +54,12 @@ export class VaultService {
     writeFileSync(this.vaultPath, encrypt(Buffer.from(JSON.stringify(data)), this.key))
   }
 
+  ensureExists(): void {
+    if (!existsSync(this.vaultPath)) {
+      this.save({ version: 1, projects: {} })
+    }
+  }
+
   private async withLock<T>(fn: (data: VaultData) => T): Promise<T> {
     mkdirSync(dirname(this.lockFile), { recursive: true })
     if (!existsSync(this.lockFile)) writeFileSync(this.lockFile, '')

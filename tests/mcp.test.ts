@@ -116,19 +116,6 @@ describe('mcp tools', () => {
     expect(data.stdout.trim()).toBe('node-works')
   })
 
-  it('run_script runs python code with env', async () => {
-    const { vault, server } = await makeServices(dir)
-    await vault.createProject('p', '')
-    await vault.setSecret('p', 'PY', 'py-works', '')
-    const { data } = await callTool(server, 'run_script', {
-      project: 'p',
-      lang: 'python',
-      code: `import os; print(os.environ['PY'])`,
-    })
-    expect(data.exit_code).toBe(0)
-    expect(data.stdout.trim()).toBe('py-works')
-  })
-
   it('env_keys lists keys without values', async () => {
     const { server } = await makeServices(dir)
     const envPath = join(dir, '.env')
