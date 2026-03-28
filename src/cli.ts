@@ -20,8 +20,8 @@ import { runTui } from './tui.js'
 function createServices() {
   const home = zocketHome()
   mkdirSync(home, { recursive: true })
-  const key = loadOrCreateKey(keyPath())
-  const vault = new VaultService(vaultPath(), lockPath(), key)
+  const keyMaterial = loadOrCreateKey(keyPath())
+  const vault = new VaultService(vaultPath(), lockPath(), keyMaterial.key, keyMaterial.legacyBase64, keyPath())
   vault.ensureExists()
   const config = new ConfigStore(configPath())
   const audit = new AuditLogger(auditPath())
@@ -37,6 +37,7 @@ async function cmdStart(opts: {
   mcpPort: number
   mcpStreamPort: number
   mode: string
+  webEnabled: boolean
 }) {
   const { vault, config, audit } = createServices()
   const cfg = config.ensureExists()
@@ -45,10 +46,14 @@ async function cmdStart(opts: {
   const services = { vault, config, audit, mode }
 
   // ── Web panel on webPort ──────────────────────────────────────────────────
-  const webApp = createWebApp({ vault, config, audit })
-  serve({ fetch: webApp.fetch, hostname: opts.host, port: opts.webPort }, () => {
-    console.log(`[zocket] web    http://${opts.host}:${opts.webPort}`)
-  })
+  if (opts.webEnabled) {
+    const webApp = createWebApp({ vault, config, audit })
+    serve({ fetch: webApp.fetch, hostname: opts.host, port: opts.webPort }, () => {
+      console.log(`[zocket] web    http://${opts.host}:${opts.webPort}`)
+    })
+  } else {
+    console.log('[zocket] web    disabled')
+  }
 
   // ── MCP SSE on mcpPort ────────────────────────────────────────────────────
   const sessions = new Map<string, SSEServerTransport>()
@@ -188,12 +193,13 @@ export function buildCli(): Command {
 
   program
     .command('start')
-    .description('Start web panel + MCP SSE + MCP Streamable HTTP servers')
+    .description('Start web panel + MCP SSE + MCP Streamable HTTP servers (use --no-web for MCP-only)')
     .option('--host <host>',      'Bind host',          '127.0.0.1')
     .option('--web-port <port>',  'Web panel port',     '18001')
     .option('--mcp-port <port>',  'MCP SSE port',       '18002')
     .option('--mcp-stream-port <port>', 'MCP Streamable HTTP port', '18003')
     .option('--mode <mode>',      'MCP mode (metadata|admin)', 'admin')
+    .option('--no-web',           'Disable web panel')
     .action(async (opts) => {
       await cmdStart({
         host:    opts.host,
@@ -201,6 +207,25 @@ export function buildCli(): Command {
         mcpPort: parseInt(opts.mcpPort, 10),
         mcpStreamPort: parseInt(opts.mcpStreamPort, 10),
         mode:    opts.mode,
+        webEnabled: opts.web,
+      })
+    })
+
+  program
+    .command('server')
+    .description('Start MCP servers without web panel')
+    .option('--host <host>',      'Bind host',          '127.0.0.1')
+    .option('--mcp-port <port>',  'MCP SSE port',       '18002')
+    .option('--mcp-stream-port <port>', 'MCP Streamable HTTP port', '18003')
+    .option('--mode <mode>',      'MCP mode (metadata|admin)', 'admin')
+    .action(async (opts) => {
+      await cmdStart({
+        host:    opts.host,
+        webPort: 18001,
+        mcpPort: parseInt(opts.mcpPort, 10),
+        mcpStreamPort: parseInt(opts.mcpStreamPort, 10),
+        mode:    opts.mode,
+        webEnabled: false,
       })
     })
 

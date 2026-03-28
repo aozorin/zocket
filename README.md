@@ -41,6 +41,11 @@ zocket start --host 127.0.0.1 --web-port 18001 --mcp-port 18002 --mcp-stream-por
 
 Open `http://127.0.0.1:18001`.
 
+MCP-only (no web panel):
+```bash
+zocket server --host 127.0.0.1 --mcp-port 18002 --mcp-stream-port 18003 --mode admin
+```
+
 ## CLI / TUI
 
 Full CLI management:

@@ -11,7 +11,8 @@ Param(
   [int]$McpStreamPort = 18003,
   [ValidateSet("metadata", "admin")]
   [string]$McpMode = "admin",
-  [bool]$EnableAutostart = $true
+  [bool]$EnableAutostart = $true,
+  [switch]$NoWeb
 )
 
 $ErrorActionPreference = "Stop"
@@ -63,12 +64,17 @@ $env:ZOCKET_HOME = $ZocketHome
 if ($EnableAutostart) {
   $taskName = "Zocket"
   $cmd = "\"$zocketBin\" start --host 127.0.0.1 --web-port $WebPort --mcp-port $McpPort --mcp-stream-port $McpStreamPort --mode $McpMode"
+  if ($NoWeb) { $cmd = "$cmd --no-web" }
   schtasks /Create /F /SC ONLOGON /RL LIMITED /TN $taskName /TR $cmd | Out-Null
 }
 
 Write-Output "zocket installed successfully."
 Write-Output "zocket: $zocketBin"
 Write-Output "ZOCKET_HOME=$ZocketHome"
-Write-Output "web panel: http://127.0.0.1:$WebPort"
+if ($NoWeb) {
+  Write-Output "web panel: disabled"
+} else {
+  Write-Output "web panel: http://127.0.0.1:$WebPort"
+}
 Write-Output "mcp sse:   http://127.0.0.1:$McpPort/sse"
 Write-Output "mcp http:  http://127.0.0.1:$McpStreamPort/mcp"

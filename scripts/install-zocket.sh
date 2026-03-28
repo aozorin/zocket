@@ -15,6 +15,7 @@ MCP_STREAM_PORT="${MCP_STREAM_PORT:-18003}"
 MCP_MODE="${MCP_MODE:-admin}"              # metadata|admin
 AUTOSTART="${AUTOSTART:-user}"             # user|system|none
 SERVICE_USER="${SERVICE_USER:-zocketd}"
+WEB_ENABLED="${WEB_ENABLED:-true}"
 
 usage() {
   cat <<EOF
@@ -30,6 +31,7 @@ Options:
   --mcp-port <port>
   --mcp-stream-port <port>
   --mcp-mode <metadata|admin>
+  --no-web
   --autostart <user|system|none>
   --service-user <name>
   -h, --help
@@ -49,6 +51,7 @@ while [[ $# -gt 0 ]]; do
     --mcp-port) MCP_PORT="$2"; shift 2 ;;
     --mcp-stream-port) MCP_STREAM_PORT="$2"; shift 2 ;;
     --mcp-mode) MCP_MODE="$2"; shift 2 ;;
+    --no-web) WEB_ENABLED="false"; shift 1 ;;
     --autostart) AUTOSTART="$2"; shift 2 ;;
     --service-user) SERVICE_USER="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -242,6 +245,9 @@ EOF
 }
 
 EXEC_START="${ZOCKET_BIN} start --host 127.0.0.1 --web-port ${WEB_PORT} --mcp-port ${MCP_PORT} --mcp-stream-port ${MCP_STREAM_PORT} --mode ${MCP_MODE}"
+if [[ "$WEB_ENABLED" == "false" ]]; then
+  EXEC_START="${EXEC_START} --no-web"
+fi
 
 if [[ "$AUTOSTART" == "user" && "$OS" == linux* ]]; then
   USER_UNIT_DIR="$HOME/.config/systemd/user"
@@ -270,7 +276,7 @@ zocket:    ${ZOCKET_BIN}
 ZOCKET_HOME=${ZOCKET_HOME_DIR}
 
 Default ports:
-  web panel: http://127.0.0.1:${WEB_PORT}
+  web panel: http://127.0.0.1:${WEB_PORT}$( [[ "$WEB_ENABLED" == "false" ]] && printf ' (disabled)' )
   MCP SSE:   http://127.0.0.1:${MCP_PORT}/sse
   MCP HTTP:  http://127.0.0.1:${MCP_STREAM_PORT}/mcp
 

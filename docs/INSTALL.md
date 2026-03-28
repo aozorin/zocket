@@ -12,6 +12,11 @@ This guide installs **zocket** (Node.js) as:
 curl -fsSL https://raw.githubusercontent.com/aozorin/zocket/main/scripts/install-zocket.sh | bash
 ```
 
+MCP-only (no web panel):
+```bash
+curl -fsSL https://raw.githubusercontent.com/aozorin/zocket/main/scripts/install-zocket.sh | bash -s -- --no-web
+```
+
 If you run from a local clone:
 ```bash
 bash scripts/install-zocket.sh --source local
@@ -20,6 +25,13 @@ bash scripts/install-zocket.sh --source local
 ### Windows (PowerShell)
 ```powershell
 irm https://raw.githubusercontent.com/aozorin/zocket/main/scripts/install-zocket.ps1 | iex
+```
+
+MCP-only (no web panel):
+```powershell
+$tmp = "$env:TEMP\\install-zocket.ps1"
+irm https://raw.githubusercontent.com/aozorin/zocket/main/scripts/install-zocket.ps1 -OutFile $tmp
+powershell -ExecutionPolicy Bypass -File $tmp -NoWeb
 ```
 
 If you run from a local clone:
@@ -93,6 +105,11 @@ zocket init
 zocket start --host 127.0.0.1 --web-port 18001 --mcp-port 18002 --mcp-stream-port 18003 --mode admin
 ```
 
+MCP-only (no web panel):
+```bash
+zocket server --host 127.0.0.1 --mcp-port 18002 --mcp-stream-port 18003 --mode admin
+```
+
 ## 6) Systemd hardening on Linux (production)
 
 If you install with `--autostart system`, the installer creates and enables:
@@ -155,6 +172,7 @@ Or create manually:
 - task `Zocket` on logon
 - action:
   - `zocket start --host 127.0.0.1 --web-port 18001 --mcp-port 18002 --mcp-stream-port 18003 --mode admin`
+  - add `--no-web` for MCP-only
 
 ## 7) First web open
 

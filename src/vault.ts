@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { dirname } from 'path'
 import { lock } from 'proper-lockfile'
-import { encrypt, decrypt } from './crypto.js'
+import { encrypt, decrypt, decryptLegacyFernet } from './crypto.js'
 
 const PROJECT_RE = /^[a-zA-Z0-9._-]+$/
 const SECRET_RE = /^[A-Z_][A-Z0-9_]*$/
@@ -41,12 +41,22 @@ export class VaultService {
     private vaultPath: string,
     private lockFile: string,
     private key: Buffer,
+    private legacyKeyBase64?: string,
+    private keyFilePath?: string,
   ) {}
 
   private load(): VaultData {
     if (!existsSync(this.vaultPath)) return { version: 1, projects: {} }
     const raw = readFileSync(this.vaultPath)
-    return JSON.parse(decrypt(raw, this.key).toString('utf8'))
+    try {
+      return JSON.parse(decrypt(raw, this.key).toString('utf8'))
+    } catch (err) {
+      const message = String(err)
+      if (this.legacyKeyBase64 && message.includes('Unsupported vault version')) {
+        return this.migrateLegacy(raw)
+      }
+      throw err
+    }
   }
 
   private save(data: VaultData): void {
@@ -58,6 +68,32 @@ export class VaultService {
     if (!existsSync(this.vaultPath)) {
       this.save({ version: 1, projects: {} })
     }
+  }
+
+  private migrateLegacy(raw: Buffer): VaultData {
+    const plaintext = decryptLegacyFernet(raw, this.legacyKeyBase64 as string)
+    let parsed: any
+    try {
+      parsed = JSON.parse(plaintext.toString('utf8'))
+    } catch {
+      throw new Error('Legacy vault JSON parse failed')
+    }
+    const data: VaultData = {
+      version: typeof parsed.version === 'number' ? parsed.version : 1,
+      projects: parsed.projects && typeof parsed.projects === 'object' ? parsed.projects : {},
+    }
+    // Normalize and re-save using new AES-GCM envelope
+    if (!data.version || data.version !== 1) data.version = 1
+    if (!data.projects) data.projects = {}
+    this.save(data)
+    if (this.keyFilePath) {
+      try {
+        writeFileSync(this.keyFilePath, this.key.toString('hex'), { mode: 0o600 })
+      } catch {
+        // ignore key rewrite failure; vault already migrated
+      }
+    }
+    return data
   }
 
   private async withLock<T>(fn: (data: VaultData) => T): Promise<T> {
