@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { dirname } from 'path'
 import { randomBytes } from 'crypto'
 import type { SecurityMode, RiskLevel } from './security.js'
+import type { DefenceLevel } from './defence.js'
 
 export type { SecurityMode, RiskLevel }
 export type KeyStorage = 'file' | 'keyring' | 'env'
@@ -25,6 +26,7 @@ export interface Config {
   exec_redact_secrets: boolean
   security_mode: SecurityMode
   security_block_threshold: RiskLevel
+  defence_level: DefenceLevel
   /** Tool registration strategy. eager = all tools at connect; lazy = on-demand via activate_tool. */
   mcp_loading: McpLoading
 }
@@ -46,6 +48,7 @@ const DEFAULTS: Config = {
   exec_redact_secrets: true,
   security_mode: 'enforce' as SecurityMode,
   security_block_threshold: 'high' as RiskLevel,
+  defence_level: 'decent' as DefenceLevel,
   mcp_loading: 'eager' as McpLoading,
 }
 
@@ -55,7 +58,11 @@ export class ConfigStore {
   load(): Config {
     try {
       const raw = JSON.parse(readFileSync(this.path, 'utf8'))
-      return { ...DEFAULTS, ...raw }
+      const merged = { ...DEFAULTS, ...raw }
+      if (!merged.defence_level) {
+        merged.defence_level = merged.security_mode === 'audit' ? 'low' : 'decent'
+      }
+      return merged
     } catch {
       return { ...DEFAULTS }
     }

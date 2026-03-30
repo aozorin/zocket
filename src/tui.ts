@@ -1,8 +1,12 @@
 import blessed from 'blessed'
 import type { Widgets } from 'blessed'
+import { readFileSync, writeFileSync } from 'fs'
+import { homedir } from 'os'
+import { join } from 'path'
 import type { VaultService } from './vault.js'
 import type { ConfigStore } from './config.js'
 import type { AuditLogger } from './audit.js'
+import { applyDefence, normalizeDefence } from './defence.js'
 
 type Services = {
   vault: VaultService
@@ -34,7 +38,7 @@ function buildProjectLabel(row: ProjectRow): string {
 }
 
 export async function runTui(services: Services): Promise<void> {
-  const { vault } = services
+  const { vault, config } = services
   const screen = blessed.screen({
     smartCSR: true,
     title: 'zocket',
@@ -46,7 +50,7 @@ export async function runTui(services: Services): Promise<void> {
     height: 1,
     width: '100%',
     style: { fg: 'white', bg: 'blue' },
-    content: ' zocket • TUI  |  q:quit  tab:switch  r:refresh  v:values  n:new project  d:delete  s:set secret  e:edit  x:delete',
+    content: ' zocket • TUI  |  q:quit  tab:switch  r:refresh  v:values  n:new project  d:delete  s:set  e:edit  x:delete  o:export  i:import  g:settings',
   })
 
   const footer = blessed.box({
@@ -270,6 +274,42 @@ export async function runTui(services: Services): Promise<void> {
     setStatus('Allowed domains updated')
   }
 
+  async function exportVault() {
+    const def = join(homedir(), 'zocket-export.json')
+    const path = await askInput('Export file path', def)
+    if (!path) return
+    const data = await vault.exportData()
+    writeFileSync(path, JSON.stringify(data, null, 2), 'utf8')
+    setStatus(`Exported: ${path}`)
+  }
+
+  async function importVault() {
+    const def = join(homedir(), 'zocket-export.json')
+    const path = await askInput('Import file path', def)
+    if (!path) return
+    const modeRaw = await askInput('Import mode (merge/replace)', 'merge')
+    const mode = modeRaw?.trim() === 'replace' ? 'replace' : 'merge'
+    const ok = await askConfirm(`Import (${mode}) from ${path}?`)
+    if (!ok) return
+    const raw = readFileSync(path, 'utf8')
+    const parsed = JSON.parse(raw)
+    await vault.importData(parsed, mode)
+    setStatus(`Imported (${mode}): ${path}`)
+    await refreshAll()
+  }
+
+  async function updateSettings() {
+    const cfg = config.load()
+    const loading = await askInput('MCP loading (eager/lazy)', cfg.mcp_loading)
+    if (!loading) return
+    const defence = await askInput('Defence level (low/decent/high)', cfg.defence_level)
+    if (!defence) return
+    const next = applyDefence(cfg, normalizeDefence(defence))
+    next.mcp_loading = loading.trim() === 'lazy' ? 'lazy' : 'eager'
+    config.save(next)
+    setStatus(`Settings saved: ${next.mcp_loading}, ${next.defence_level}`)
+  }
+
   function selectedSecretKey(): string | null {
     if (!secrets.length) return null
     const idx = secretTable.selected - 1
@@ -358,6 +398,18 @@ export async function runTui(services: Services): Promise<void> {
   })
   screen.key(['x'], async () => {
     await deleteSecret()
+    screen.render()
+  })
+  screen.key(['o'], async () => {
+    await exportVault()
+    screen.render()
+  })
+  screen.key(['i'], async () => {
+    await importVault()
+    screen.render()
+  })
+  screen.key(['g'], async () => {
+    await updateSettings()
     screen.render()
   })
 

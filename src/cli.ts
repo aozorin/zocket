@@ -1,6 +1,6 @@
 import { Command } from 'commander'
 import { createServer } from 'http'
-import { mkdirSync } from 'fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { randomUUID } from 'crypto'
 import { serve } from '@hono/node-server'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
@@ -14,6 +14,7 @@ import { createWebApp } from './web.js'
 import { vaultPath, keyPath, configPath, auditPath, lockPath, zocketHome } from './paths.js'
 import { loadOrCreateKey } from './keys.js'
 import { runTui } from './tui.js'
+import { applyDefence, normalizeDefence } from './defence.js'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -212,6 +213,31 @@ export function buildCli(): Command {
     })
 
   program
+    .command('export <file>')
+    .description('Export all projects/secrets to a JSON file')
+    .option('--pretty', 'Pretty-print JSON')
+    .action(async (file, opts) => {
+      const { vault } = createServices()
+      const data = await vault.exportData()
+      const json = JSON.stringify(data, null, opts.pretty ? 2 : 0)
+      writeFileSync(file, json, 'utf8')
+      console.log(`Exported: ${file}`)
+    })
+
+  program
+    .command('import <file>')
+    .description('Import all projects/secrets from a JSON file')
+    .option('--mode <mode>', 'merge or replace', 'merge')
+    .action(async (file, opts) => {
+      const { vault } = createServices()
+      const mode = String(opts.mode ?? 'merge') === 'replace' ? 'replace' : 'merge'
+      const raw = readFileSync(file, 'utf8')
+      const parsed = JSON.parse(raw)
+      await vault.importData(parsed, mode)
+      console.log(`Imported (${mode}): ${file}`)
+    })
+
+  program
     .command('server')
     .description('Start MCP servers without web panel')
     .option('--host <host>',      'Bind host',          '127.0.0.1')
@@ -227,6 +253,36 @@ export function buildCli(): Command {
         mode:    opts.mode,
         webEnabled: false,
       })
+    })
+
+  const cfgCmd = program.command('config').description('Manage settings')
+  cfgCmd
+    .command('show')
+    .action(async () => {
+      const { config } = createServices()
+      console.log(JSON.stringify(config.load(), null, 2))
+    })
+
+  cfgCmd
+    .command('set-loading <mode>')
+    .description('Set MCP tool loading mode (eager|lazy)')
+    .action(async (mode) => {
+      const { config } = createServices()
+      const cfg = config.load()
+      cfg.mcp_loading = mode === 'lazy' ? 'lazy' : 'eager'
+      config.save(cfg)
+      console.log(`mcp_loading: ${cfg.mcp_loading}`)
+    })
+
+  cfgCmd
+    .command('set-defence <level>')
+    .description('Set defence level (low|decent|high)')
+    .action(async (level) => {
+      const { config } = createServices()
+      const cfg = config.load()
+      const next = applyDefence(cfg, normalizeDefence(String(level)))
+      config.save(next)
+      console.log(`defence_level: ${next.defence_level}`)
     })
 
   const projects = program.command('projects').description('Manage projects')

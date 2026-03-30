@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, chmodSync, statSync } from 'fs'
+import { userInfo } from 'os'
 
 /** Returns an array of key names from a .env file (values are never exposed). */
 export function listEnvKeys(filePath: string): string[] {
@@ -12,7 +13,14 @@ export function listEnvKeys(filePath: string): string[] {
 }
 
 /** Inserts or updates a key=value pair in a .env file. */
-export function setEnvKey(filePath: string, key: string, value: string): void {
+export function setEnvKey(filePath: string, key: string, value: string, protect = false): void {
+  if (protect && process.platform !== 'win32' && existsSync(filePath)) {
+    const st = statSync(filePath)
+    const uid = typeof st.uid === 'number' ? st.uid : null
+    if (uid !== null && uid !== process.getuid()) {
+      throw new Error(`File not owned by ${userInfo().username}. Run zocket service or chown ${filePath}`)
+    }
+  }
   const existing = existsSync(filePath) ? readFileSync(filePath, 'utf8') : ''
   const lines = existing ? existing.split('\n') : []
 
@@ -30,4 +38,7 @@ export function setEnvKey(filePath: string, key: string, value: string): void {
   }
 
   writeFileSync(filePath, lines.join('\n'))
+  if (protect) {
+    try { chmodSync(filePath, 0o600) } catch { /* ignore */ }
+  }
 }

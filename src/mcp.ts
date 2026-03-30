@@ -6,6 +6,8 @@ import { ConfigStore } from './config.js'
 import { AuditLogger } from './audit.js'
 import { runCommand, runScript } from './runner.js'
 import { listEnvKeys, setEnvKey } from './env-file.js'
+import { setConfigValue } from './config-file.js'
+import { userInfo } from 'os'
 import { createAnalyzer } from './security.js'
 import { extractHints } from './api-registry.js'
 
@@ -38,6 +40,7 @@ Rules:
 - Use output_filter (jq expression) to extract only the field you need from JSON responses.
 - $VAR and \${VAR} placeholders in command args are substituted server-side with project secrets.
 - In lazy mode: call list_tools_summary to see available tools, then activate_tool(name) before first use.
+- High defence mode: run_with_project_env/run_script are disabled. Use env_set or config_set.
 `.trim()
 
 /** Apply a jq expression to a JSON string. Returns filtered string or original on failure. */
@@ -146,6 +149,9 @@ function buildCatalog(services: McpServices): CatalogEntry[] {
           async ({ project, command, max_chars, output_filter, confirm }) => {
             try {
               const cfg = config.load()
+              if (cfg.defence_level === 'high') {
+                return err('High defence mode: run_with_project_env is disabled. Use env_set or config_set.')
+              }
               const allowedDomains = await vault.getAllowedDomains(project)
               const keyNames = await vault.listKeys(project)
               const hints = extractHints(project, keyNames)
@@ -203,6 +209,9 @@ function buildCatalog(services: McpServices): CatalogEntry[] {
           async ({ project, lang, code, max_chars, confirm }) => {
             try {
               const cfg = config.load()
+              if (cfg.defence_level === 'high') {
+                return err('High defence mode: run_script is disabled. Use env_set or config_set.')
+              }
               const allowedDomains = await vault.getAllowedDomains(project)
               const keyNames = await vault.listKeys(project)
               const hints = extractHints(project, keyNames)
@@ -263,9 +272,51 @@ function buildCatalog(services: McpServices): CatalogEntry[] {
           },
           ({ path, key, value }) => {
             try {
-              setEnvKey(path, key, value)
+              const cfg = config.load()
+              if (cfg.defence_level === 'high' && !/\.env(\.|$)/.test(path)) {
+                return err('High defence mode: env_set is restricted to .env files.')
+              }
+              if (cfg.defence_level === 'high') {
+                const required = process.env.ZOCKET_SERVICE_USER ?? 'zocketd'
+                const current = userInfo().username
+                if (current !== required) {
+                  return err(`High defence requires running as ${required}. Current user: ${current}`)
+                }
+              }
+              setEnvKey(path, key, value, cfg.defence_level === 'high')
               audit.log('env_set', 'mcp', { path, key }, 'ok')
               return ok({ path, key, updated: true })
+            } catch (e) { return err(String(e)) }
+          },
+        )
+      },
+    },
+
+    {
+      name: 'config_set',
+      summary: 'Set a key path in a JSON/YAML config file (.json/.yaml/.yml).',
+      register: server => {
+        server.tool(
+          'config_set',
+          'Set a key path in a JSON/YAML config file. Use dot notation (e.g., "database.password").',
+          {
+            path: z.string().describe('Absolute path to config file (.json/.yaml/.yml)'),
+            key_path: z.string().describe('Dot path to set, e.g. "database.password"'),
+            value: z.string().describe('Value to write (string)'),
+          },
+          ({ path, key_path, value }) => {
+            try {
+              const cfg = config.load()
+              if (cfg.defence_level === 'high') {
+                const required = process.env.ZOCKET_SERVICE_USER ?? 'zocketd'
+                const current = userInfo().username
+                if (current !== required) {
+                  return err(`High defence requires running as ${required}. Current user: ${current}`)
+                }
+              }
+              setConfigValue(path, key_path, value, cfg.defence_level === 'high')
+              audit.log('config_set', 'mcp', { path, key_path }, 'ok')
+              return ok({ path, key_path, updated: true })
             } catch (e) { return err(String(e)) }
           },
         )
@@ -332,6 +383,7 @@ function buildCatalog(services: McpServices): CatalogEntry[] {
             return ok({
               security_mode:            cfg.security_mode,
               security_block_threshold: cfg.security_block_threshold,
+              defence_level:            cfg.defence_level,
               mcp_loading:              cfg.mcp_loading,
               exec_allow_list:          cfg.exec_allow_list,
               exec_max_output:          cfg.exec_max_output,

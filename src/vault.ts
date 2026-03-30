@@ -219,6 +219,74 @@ export class VaultService {
     return secret.value
   }
 
+  async exportData(): Promise<VaultData> {
+    const data = this.load()
+    return JSON.parse(JSON.stringify(data)) as VaultData
+  }
+
+  private normalizeImport(input: any): VaultData {
+    if (!input || typeof input !== 'object') throw new Error('Invalid import payload')
+    const rawProjects = input.projects && typeof input.projects === 'object' ? input.projects : {}
+    const projects: Record<string, ProjectEntry> = {}
+    const now = new Date().toISOString()
+
+    for (const [name, raw] of Object.entries(rawProjects)) {
+      if (!PROJECT_RE.test(name)) throw new Error(`Invalid project name in import: ${name}`)
+      const p = raw as any
+      const entry: ProjectEntry = {
+        description: typeof p?.description === 'string' ? p.description : '',
+        created_at: typeof p?.created_at === 'string' ? p.created_at : now,
+        updated_at: typeof p?.updated_at === 'string' ? p.updated_at : now,
+        secrets: {},
+      }
+      if (typeof p?.folder_path === 'string' && p.folder_path.trim()) {
+        entry.folder_path = p.folder_path
+      }
+      if (Array.isArray(p?.allowed_domains)) {
+        entry.allowed_domains = p.allowed_domains.map((d: string) => String(d)).filter(Boolean)
+      }
+      const rawSecrets = p?.secrets && typeof p.secrets === 'object' ? p.secrets : {}
+      for (const [key, s] of Object.entries(rawSecrets)) {
+        if (!SECRET_RE.test(key)) throw new Error(`Invalid secret key in import: ${key}`)
+        const val = s as any
+        entry.secrets[key] = {
+          value: typeof val?.value === 'string' ? val.value : '',
+          description: typeof val?.description === 'string' ? val.description : '',
+          updated_at: typeof val?.updated_at === 'string' ? val.updated_at : now,
+        }
+      }
+      projects[name] = entry
+    }
+
+    return { version: 1, projects }
+  }
+
+  async importData(input: any, mode: 'merge' | 'replace' = 'merge'): Promise<void> {
+    const incoming = this.normalizeImport(input)
+    const now = new Date().toISOString()
+    await this.withLock(data => {
+      if (mode === 'replace') {
+        data.projects = incoming.projects
+        return
+      }
+      for (const [name, entry] of Object.entries(incoming.projects)) {
+        if (!data.projects[name]) {
+          data.projects[name] = entry
+          data.projects[name].updated_at = now
+          continue
+        }
+        const existing = data.projects[name]
+        existing.description = entry.description
+        existing.folder_path = entry.folder_path
+        existing.allowed_domains = entry.allowed_domains
+        for (const [key, secret] of Object.entries(entry.secrets)) {
+          existing.secrets[key] = secret
+        }
+        existing.updated_at = now
+      }
+    })
+  }
+
   async reEncrypt(newKey: Buffer): Promise<void> {
     mkdirSync(dirname(this.lockFile), { recursive: true })
     if (!existsSync(this.lockFile)) writeFileSync(this.lockFile, '')

@@ -7,6 +7,7 @@ import type { VaultService } from './vault.js'
 import type { ConfigStore } from './config.js'
 import type { AuditLogger } from './audit.js'
 import { hashPassword, verifyPassword } from './auth.js'
+import { applyDefence, normalizeDefence } from './defence.js'
 import { t, normalizeLang, type Lang } from './i18n.js'
 
 // ── Session helpers ───────────────────────────────────────────────────────────
@@ -45,16 +46,29 @@ const CSS_COMMON = `
 :root{--p:#0088cc;--pd:#006699;--bg:#f4faff;--bga:#eaf4fb;--card:rgba(255,255,255,.92);--text:#1b2b37;--muted:#607889;--bdr:rgba(0,136,204,.23);--danger:#be123c;--ok:#0f766e}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Manrope","Segoe UI",sans-serif;color:var(--text)}
-input,button,textarea{width:100%;border-radius:11px;padding:9px 10px;font:inherit;margin-bottom:8px}
-input,textarea{border:1px solid var(--bdr);background:rgba(255,255,255,.95)}
+input,button,textarea,select{width:100%;border-radius:11px;padding:9px 10px;font:inherit;margin-bottom:8px}
+input,textarea,select{border:1px solid var(--bdr);background:rgba(255,255,255,.95)}
 input:focus,textarea:focus{outline:2px solid rgba(0,136,204,.28);border-color:var(--p)}
 button{border:0;cursor:pointer;color:#fff;font-weight:800;background:linear-gradient(95deg,var(--p),#00a7ff);box-shadow:0 10px 22px rgba(0,136,204,.23)}
 button:hover{transform:translateY(-1px)}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:#fff;font-weight:800;background:linear-gradient(95deg,var(--p),#00a7ff);box-shadow:0 10px 22px rgba(0,136,204,.23);border-radius:11px;padding:9px 12px}
+.btn-primary:hover{transform:translateY(-1px)}
 .danger{background:linear-gradient(95deg,var(--danger),#e11d48)!important;box-shadow:0 10px 22px rgba(190,18,60,.25)!important}
 .mono{font-family:"JetBrains Mono","Fira Code",monospace;font-size:13px;word-break:break-word}
 .inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .inline form{margin:0}
 .btn-sm{width:auto;margin-bottom:0;padding:7px 11px}
+.inline input,.inline select{width:auto;margin-bottom:0}
+.icon-btn{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.icon-btn svg{width:18px;height:18px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.panel{border:1px solid var(--bdr);border-radius:14px;padding:12px;background:rgba(255,255,255,.85)}
+.panel h4{margin:0 0 8px;font-size:14px;color:var(--muted)}
+.file-input{max-width:320px}
+.tabs{display:flex;gap:8px;margin:6px 0 12px}
+.tab{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bdr);border-radius:999px;padding:6px 12px;background:rgba(255,255,255,.85);color:var(--pd);text-decoration:none;font-weight:700}
+.tab.active{background:linear-gradient(95deg,var(--p),#00a7ff);color:#fff;border-color:transparent}
+.muted{color:var(--muted);font-size:13px}
 .error{margin-bottom:12px;padding:10px 12px;border:1px solid #fecdd3;background:#fff1f2;color:#9f1239;border-radius:12px}
 .notice{margin-bottom:12px;padding:10px 12px;border:1px solid #99f6e4;background:#f0fdfa;color:#115e59;border-radius:12px}
 `
@@ -171,11 +185,52 @@ function mainPage(opts: {
   secrets: Array<{ key: string; description: string; updated_at: string }>
   showValues: boolean
   secretValues: Record<string, string>
+  tab: string
+  mcp_loading: string
+  defence_level: string
   error?: string
   notice?: string
 }): string {
-  const { lang, projects, selected, secrets, showValues, secretValues, error, notice } = opts
+  const { lang, projects, selected, secrets, showValues, secretValues, tab, mcp_loading, defence_level, error, notice } = opts
   const selInfo = projects.find(p => p.name === selected)
+  const folderIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"/></svg>'
+  const activeTab = tab === 'transfer' ? 'transfer' : (tab === 'settings' ? 'settings' : 'secrets')
+  const showParam = showValues ? '&show_values=1' : ''
+  const tabParam = `&tab=${enc(activeTab)}`
+  const transferBlock = `
+<div class="stack">
+  <div class="panel">
+    <h4>${t('ui.export', lang)}</h4>
+    <a class="btn-sm btn-primary" href="/export" download>${t('ui.export', lang)}</a>
+  </div>
+  <div class="panel">
+    <h4>${t('ui.import', lang)}</h4>
+    <form method="post" action="/import" enctype="multipart/form-data">
+      <input class="file-input" type="file" name="file" accept="application/json" required/>
+      <select name="mode">
+        <option value="merge">${t('ui.import_merge', lang)}</option>
+        <option value="replace">${t('ui.import_replace', lang)}</option>
+      </select>
+      <button class="btn-sm btn-primary" type="submit">${t('ui.import', lang)}</button>
+    </form>
+  </div>
+</div>`
+  const settingsBlock = `
+<form method="post" action="/settings/mode">
+  <label class="chip">${t('ui.mcp_loading', lang)}</label>
+  <select name="mcp_loading">
+    <option value="eager" ${mcp_loading === 'eager' ? 'selected' : ''}>${t('ui.loading_eager', lang)}</option>
+    <option value="lazy" ${mcp_loading === 'lazy' ? 'selected' : ''}>${t('ui.loading_lazy', lang)}</option>
+  </select>
+  <label class="chip">${t('ui.defence_level', lang)}</label>
+  <select name="defence_level">
+    <option value="low" ${defence_level === 'low' ? 'selected' : ''}>${t('ui.low_defence', lang)}</option>
+    <option value="decent" ${defence_level === 'decent' ? 'selected' : ''}>${t('ui.decent_defence', lang)}</option>
+    <option value="high" ${defence_level === 'high' ? 'selected' : ''}>${t('ui.high_defence', lang)}</option>
+  </select>
+  <button class="btn-sm" type="submit">${t('ui.save_settings', lang)}</button>
+</form>
+<p class="muted">${t('ui.high_defence_note', lang)}</p>`
 
   const sidebar = `
 <aside class="card">
@@ -183,7 +238,7 @@ function mainPage(opts: {
   <table>
     <thead><tr><th>${t('ui.name', lang)}</th><th>${t('ui.keys_count', lang)}</th></tr></thead>
     <tbody>
-      ${projects.map(p => `<tr><td><a href="/?project=${enc(p.name)}">${esc(p.name)}</a></td><td>${p.secret_count}</td></tr>`).join('')}
+      ${projects.map(p => `<tr><td><a href="/?project=${enc(p.name)}${showParam}${tabParam}">${esc(p.name)}</a></td><td>${p.secret_count}</td></tr>`).join('')}
     </tbody>
   </table>
   <hr/>
@@ -193,15 +248,28 @@ function mainPage(opts: {
     <input name="description" placeholder="${t('ui.optional_desc', lang)}"/>
     <div class="folder-field">
       <input id="cf" name="folder_path" placeholder="${t('ui.optional_folder', lang)}" readonly/>
-      <button class="btn-sm" type="button" onclick="openPicker('cf')">${t('ui.choose_folder', lang)}</button>
+      <button class="btn-sm icon-btn" type="button" onclick="openPicker('cf')" aria-label="${t('ui.choose_folder', lang)}" title="${t('ui.choose_folder', lang)}">${folderIcon}</button>
     </div>
     <button type="submit">${t('ui.create', lang)}</button>
   </form>
 </aside>`
 
-  let main = `<main class="card">`
+  const tabs = `
+<div class="tabs">
+  <a class="tab ${activeTab === 'secrets' ? 'active' : ''}" href="/?${selected ? `project=${enc(selected)}&` : ''}tab=secrets${showParam}">${t('ui.secrets', lang)}</a>
+  <a class="tab ${activeTab === 'transfer' ? 'active' : ''}" href="/?${selected ? `project=${enc(selected)}&` : ''}tab=transfer${showParam}">${t('ui.transfer', lang)}</a>
+  <a class="tab ${activeTab === 'settings' ? 'active' : ''}" href="/?${selected ? `project=${enc(selected)}&` : ''}tab=settings${showParam}">${t('ui.settings', lang)}</a>
+</div>`
+
+  let main = `<main class="card">${tabs}`
   if (!selected) {
-    main += `<h2>${t('ui.no_projects', lang)}</h2><p>${t('ui.create_left', lang)}</p>`
+    if (activeTab === 'transfer') {
+      main += `<h2>${t('ui.transfer', lang)}</h2>${transferBlock}`
+    } else if (activeTab === 'settings') {
+      main += `<h2>${t('ui.settings', lang)}</h2>${settingsBlock}`
+    } else {
+      main += `<h2>${t('ui.no_projects', lang)}</h2><p>${t('ui.create_left', lang)}</p>`
+    }
   } else {
     const domains = selInfo?.allowed_domains
     const domainsStr = domains ? domains.join(', ') : ''
@@ -212,7 +280,7 @@ function mainPage(opts: {
 <form method="post" action="/projects/${enc(selected)}/folder">
   <div class="folder-field">
     <input id="ef" name="folder_path" placeholder="${t('ui.optional_folder', lang)}" value="${esc(selInfo?.folder_path ?? '')}" readonly/>
-    <button class="btn-sm" type="button" onclick="openPicker('ef')">${t('ui.choose_folder', lang)}</button>
+    <button class="btn-sm icon-btn" type="button" onclick="openPicker('ef')" aria-label="${t('ui.choose_folder', lang)}" title="${t('ui.choose_folder', lang)}">${folderIcon}</button>
   </div>
   <button type="submit">${t('ui.save_folder', lang)}</button>
 </form>
@@ -230,8 +298,8 @@ ${selInfo?.folder_path ? `
 
 <p>
   ${showValues
-    ? `${t('ui.real_values_visible', lang)} <a href="/?project=${enc(selected)}">${t('ui.hide_values', lang)}</a>`
-    : `${t('ui.masked_values_visible', lang)} <a href="/?project=${enc(selected)}&show_values=1">${t('ui.show_values', lang)}</a>`}
+    ? `${t('ui.real_values_visible', lang)} <a href="/?project=${enc(selected)}&tab=${activeTab}">${t('ui.hide_values', lang)}</a>`
+    : `${t('ui.masked_values_visible', lang)} <a href="/?project=${enc(selected)}&tab=${activeTab}&show_values=1">${t('ui.show_values', lang)}</a>`}
 </p>
 <div class="inline">
   <form method="post" action="/projects/${enc(selected)}/delete" onsubmit="return confirm('${t('ui.delete_project', lang)}?')">
@@ -239,6 +307,9 @@ ${selInfo?.folder_path ? `
   </form>
 </div>
 
+${activeTab === 'transfer' ? `<h3>${t('ui.transfer', lang)}</h3>${transferBlock}` : ''}
+${activeTab === 'settings' ? `<h3>${t('ui.settings', lang)}</h3>${settingsBlock}` : ''}
+${activeTab === 'secrets' ? `
 <h3>${t('ui.secrets', lang)}</h3>
 <table>
   <thead><tr><th>KEY</th><th>${t('ui.value', lang)}</th><th>${t('ui.description', lang)}</th><th>${t('ui.updated_at', lang)}</th><th></th></tr></thead>
@@ -263,7 +334,7 @@ ${selInfo?.folder_path ? `
   <input name="value" placeholder="${t('ui.value', lang)}" required/>
   <input name="description" placeholder="${t('ui.optional_desc', lang)}"/>
   <button type="submit">${t('ui.save', lang)}</button>
-</form>`
+</form>` : ''}`
   }
   main += `</main>`
 
@@ -294,8 +365,8 @@ function pickerSelect(){if(!ps.targetId||!ps.current)return;const inp=document.g
   </div>
   <div class="meta">
     <span>${t('ui.lang', lang)}:</span>
-    <a href="/?lang=en${selected ? `&project=${enc(selected)}` : ''}">EN</a>
-    <a href="/?lang=ru${selected ? `&project=${enc(selected)}` : ''}">RU</a>
+    <a href="/?lang=en${selected ? `&project=${enc(selected)}` : ''}${showParam}${tabParam}">EN</a>
+    <a href="/?lang=ru${selected ? `&project=${enc(selected)}` : ''}${showParam}${tabParam}">RU</a>
     <form method="post" action="/logout"><button class="btn-sm" type="submit">${t('ui.logout', lang)}</button></form>
   </div>
 </div>`
@@ -498,6 +569,69 @@ export function createWebApp(services: WebServices): Hono {
     return c.json({ ok: true, current, parent, roots: roots.map(r => ({ name: r, path: r })), directories: dirs })
   })
 
+  // ── Export / Import ────────────────────────────────────────────────────────
+
+  app.get('/export', async c => {
+    const cfg = config.load()
+    const sess = getCookie(c, COOKIE)
+    if (!isAuthenticated(sess, cfg.session_secret)) return c.redirect('/login')
+    const data = await vault.exportData()
+    audit.log('web.export', 'web', {}, 'ok')
+    const json = JSON.stringify(data, null, 2)
+    return new Response(json, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Disposition': 'attachment; filename="zocket-export.json"',
+      },
+    })
+  })
+
+  app.post('/import', async c => {
+    const cfg = config.load()
+    const lang = getLang(getCookie(c, 'lang'), undefined)
+    const sess = getCookie(c, COOKIE)
+    if (!isAuthenticated(sess, cfg.session_secret)) return c.redirect('/login')
+    const body = await c.req.parseBody()
+    const mode = String(body.mode ?? 'merge') === 'replace' ? 'replace' : 'merge'
+    const file = body.file as any
+    if (!file || typeof file.text !== 'function') {
+      return c.redirect(`/?error=${enc('No import file provided')}`)
+    }
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text)
+      await vault.importData(parsed, mode)
+      audit.log('web.import', 'web', { mode }, 'ok')
+      return c.redirect(`/?tab=transfer&notice=${enc(`${t('ui.import', lang)} (${mode}) ok`)}`)
+    } catch (e) {
+      audit.log('web.import', 'web', { mode }, 'fail')
+      return c.redirect(`/?tab=transfer&error=${enc(String(e))}`)
+    }
+  })
+
+  // ── Settings ──────────────────────────────────────────────────────────────
+
+  app.post('/settings/mode', async c => {
+    const cfg = config.load()
+    const lang = getLang(getCookie(c, 'lang'), undefined)
+    const sess = getCookie(c, COOKIE)
+    if (!isAuthenticated(sess, cfg.session_secret)) return c.redirect('/login')
+    const body = await c.req.parseBody()
+    const loading = String(body.mcp_loading ?? 'eager') === 'lazy' ? 'lazy' : 'eager'
+    const defence = normalizeDefence(String(body.defence_level ?? 'decent'))
+    try {
+      const next = applyDefence(cfg, defence)
+      next.mcp_loading = loading
+      config.save(next)
+      audit.log('web.settings', 'web', { loading, defence }, 'ok')
+      return c.redirect(`/?tab=settings&notice=${enc(t('ui.save_settings', lang))}`)
+    } catch (e) {
+      audit.log('web.settings', 'web', { loading, defence }, 'fail')
+      return c.redirect(`/?tab=settings&error=${enc(String(e))}`)
+    }
+  })
+
   // ── Main panel ──────────────────────────────────────────────────────────────
 
   app.get('/', async c => {
@@ -511,8 +645,10 @@ export function createWebApp(services: WebServices): Hono {
     const reqProject = c.req.query('project')
     const selected = reqProject ?? (projects[0]?.name ?? null)
     const showValues = c.req.query('show_values') === '1'
+    const tab = c.req.query('tab') ?? 'secrets'
     const notice_raw = getCookie(c, 'genpw')
     if (notice_raw) deleteCookie(c, 'genpw', { path: '/' })
+    const noticeParam = c.req.query('notice')
 
     let secrets: Array<{ key: string; description: string; updated_at: string }> = []
     let secretValues: Record<string, string> = {}
@@ -530,8 +666,11 @@ export function createWebApp(services: WebServices): Hono {
       secrets,
       showValues,
       secretValues,
+      tab,
+      mcp_loading: cfg.mcp_loading,
+      defence_level: cfg.defence_level,
       error: c.req.query('error'),
-      notice: notice_raw ? `${t('ui.generated_password_notice', lang)}\n${notice_raw}\n${t('ui.generated_password_save_now', lang)}` : undefined,
+      notice: noticeParam ? noticeParam : (notice_raw ? `${t('ui.generated_password_notice', lang)}\n${notice_raw}\n${t('ui.generated_password_save_now', lang)}` : undefined),
     }))
   })
 
